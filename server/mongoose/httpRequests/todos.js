@@ -1,7 +1,5 @@
-
 "use strict";
 const express = require("express");
-
 const router = express.Router();
 
 const Todos = require("../../mongoose/schemas/todo");
