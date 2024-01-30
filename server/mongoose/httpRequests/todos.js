@@ -14,8 +14,8 @@ router
   })
   .post(async (req, res) => {
     try {
-      const postReq = await Todos.create(req.body);
-      res.status(200).send(postReq);
+      const documentCreated = await Todos.create(req.body);
+      res.status(200).send(documentCreated);
     } catch (error) {
       res.status(400).send(error);
     }
@@ -23,17 +23,25 @@ router
 
 router
   .route(`/:id`)
-  .patch((req, res) => {
-    Todos
-      .updateOne({ _id: req.params.id }, req.body)
-      .then((todo) => res.status(200).send("todo updated", todo))
-      .catch(err => res.status(404).send(`Error while updating todos ${err}`));
+  .put(async (req, res) => {
+    try {
+      await Todos
+        .findByIdAndUpdate(req.params.id, { $set: req.body })
+        .then(result => res.status(200).send(result))
+        .catch(err => res.status(404).send(err));
+    } catch (error) {
+      res.status(400).send(error);
+    }
   })
-  .delete((req, res) => {
-    Todos
-      .deleteOne({ _id: req.params.id })
-      .then((todo) => res.status(200).send("todo deleted", todo))
-      .catch(err => res.status(404).send(`Error while deleting todos ${err}`));
+  .delete(async (req, res) => {
+    try {
+      await Todos
+        .findByIdAndDelete(req.params.id)
+        .then(result => res.status(200).send(result))
+        .catch(err => res.status(404).send(err));
+    } catch (error) {
+      res.status(400).send(error);
+    }
   })
 
 
