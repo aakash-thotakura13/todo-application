@@ -23,6 +23,16 @@ router
 
 router
   .route(`/:id`)
+  .get(async (req, res) => {
+    try {
+      await Todos
+        .findById(req.params.id)
+        .then(result => res.status(200).send(result))
+        .catch(err => res.status(404).send(err));
+    } catch (error) {
+      res.status(400).send(error);
+    }
+  })
   .put(async (req, res) => {
     try {
       await Todos
