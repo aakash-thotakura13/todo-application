@@ -1,27 +1,22 @@
 
-import './App.css'
+import { Outlet } from 'react-router-dom';
+import './App.css';
+import NavBar from './subComponents/NavBar';
 
-function InputContainer({ type, title }) {
-  return (
-    <div style={{ margin: "0.25em 0.5em", display: 'grid', gridTemplateColumns: '0.6fr 1.4fr', alignItems: "center" }}>
-
-      <label htmlFor="task" >{title || "Add Title"}</label>
-      <input style={{ padding: "0.5em", }} type={type} name="task" id="task" placeholder={`Enter ${title || ""}...`} />
-
-    </div>
-  )
-}
+const appNavBar = [
+  { title: "Todos", specifiedPath: "todos" },
+  { title: "Schedules", specifiedPath: "schedules" },
+]
 
 function App() {
 
   return (
     <>
-      <h1>Hello World</h1>
-      <p>Hello World</p>
+      <h2>Daily Planner</h2>
 
-      <InputContainer title="task" type="text" />
-      <InputContainer title="completeBy" type="date" />
+      <NavBar navBarDetails={appNavBar}/>
 
+      <Outlet />
     </>
   )
 }
