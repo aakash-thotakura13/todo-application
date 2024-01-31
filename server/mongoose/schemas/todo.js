@@ -5,7 +5,6 @@ const todoSchema = new mongoose.Schema({
   task: {
     type: String,
     required: true,
-    lowercase: true,
     trim: true,
   },
   completeBy: {
