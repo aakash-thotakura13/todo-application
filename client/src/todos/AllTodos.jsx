@@ -1,7 +1,8 @@
 import React from "react";
 import axios from "axios";
 
-const url = `https://todo-application-personal-use.onrender.com/todos`;
+// const url = `https://todo-application-personal-use.onrender.com/todos`;
+const url = "http://localhost:3000/todos";
 
 export const AllTodos = () => {
 
@@ -16,43 +17,47 @@ export const AllTodos = () => {
 
   console.log(allTasks);
 
-  const getTasks = () => {
-    const source = axios.CancelToken.source();;
-
-    axios
-      .get(url, {
-        cancelToken: source.token
-      })
-      .then(result => {
-        // console.log(result)
-        setAllTasks(result.data)
-      })
-      // .then(() => source.cancel('Request canceled by the user!'))
-      .catch(err => {
-        axios.isCancel(err)
-          ? console.log("Request canceled", err.message)
-          : console.log("Request accepted")
-      });
+  const getTasks = async () => {
+    await axios
+      .get(url)
+      .then(result => setAllTasks(result.data))
+      .catch(err => console.log("Request canceled", err.message));
   }
 
-
-  async function deleteTodo(id) {
-    const deleteResponse = await axios.delete(`${url}/${id}`);
-    console.log(deleteResponse);
-    getTasks()
-  }
 
   async function handleSubmit(e) { // posting todos
+    // A function to handle form submission.
     e.preventDefault();
-    console.log("todo posted!");
+
     let newPost = {
       task: e.target.todo.value,
       date: e.target.date.value
     }
-    const postResponse = await axios.post(url, newPost);
-    console.log(postResponse);
-    getTasks()
+    await axios.post(url, newPost);
+
+    getTasks();
+    e.target.reset();
   }
+
+
+  async function deleteTodo(id) {
+    await axios.delete(`${url}/${id}`);
+    getTasks();
+  }
+
+
+  async function updateTodo(id) {
+    const specificTodo = await axios.get(`${url}/${id}`);
+
+    let updatedData = {
+      ...specificTodo.data,
+      isChecked: !specificTodo.data.isChecked
+    }
+
+    await axios.put(`${url}/${id}`, { ...updatedData })
+    getTasks();
+  }
+
 
   return (
     <>
@@ -68,6 +73,7 @@ export const AllTodos = () => {
             .map((todo, id) =>
               <li key={id} style={{ listStyle: "none" }}>
                 <div style={{ padding: "0.7em 1em", display: "flex", alignItems: "center", justifyContent: "space-between", }}>
+                  <input type="checkbox" checked={todo.isChecked ? true : false} onChange={() => updateTodo(todo._id)} />
                   <p style={{ marginLeft: "0.45em", textAlign: "left", }}>{todo.task}</p>
                   <button style={{ border: "0.1em groove red", padding: "0.2em 0.5em", borderRadius: "50%", }} onClick={() => deleteTodo(todo._id)} >X</button>
                 </div>
