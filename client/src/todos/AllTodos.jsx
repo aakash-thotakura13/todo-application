@@ -1,6 +1,8 @@
 import React from "react";
 import axios from "axios";
 
+const url = `https://todo-application-personal-use.onrender.com/todos`;
+
 export const AllTodos = () => {
 
   const [allTasks, setAllTasks] = React.useState();
@@ -18,7 +20,7 @@ export const AllTodos = () => {
     const source = axios.CancelToken.source();;
 
     axios
-      .get("http://localhost:3000/todos", {
+      .get(url, {
         cancelToken: source.token
       })
       .then(result => {
@@ -35,7 +37,7 @@ export const AllTodos = () => {
 
 
   async function deleteTodo(id) {
-    const deleteResponse = await axios.delete(`http://localhost:3000/todos/${id}`);
+    const deleteResponse = await axios.delete(`${url}/${id}`);
     console.log(deleteResponse);
     getTasks()
   }
@@ -47,7 +49,7 @@ export const AllTodos = () => {
       task: e.target.todo.value,
       date: e.target.date.value
     }
-    const postResponse = await axios.post("http://localhost:3000/todos", newPost);
+    const postResponse = await axios.post(url, newPost);
     console.log(postResponse);
     getTasks()
   }
@@ -66,7 +68,7 @@ export const AllTodos = () => {
             .map((todo, id) =>
               <li key={id} style={{ listStyle: "none" }}>
                 <div style={{ padding: "0.7em 1em", display: "flex", alignItems: "center", justifyContent: "space-between", }}>
-                  <p style={{ marginLeft: "0.45em", textAlign: "left",  }}>{todo.task}</p>
+                  <p style={{ marginLeft: "0.45em", textAlign: "left", }}>{todo.task}</p>
                   <button style={{ border: "0.1em groove red", padding: "0.2em 0.5em", borderRadius: "50%", }} onClick={() => deleteTodo(todo._id)} >X</button>
                 </div>
                 <hr />
