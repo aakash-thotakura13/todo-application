@@ -12,9 +12,9 @@ function App() {
 
   return (
     <>
-      <h2>Daily Planner</h2>
+      <h2 style={{ ...inlineStyles.heading, textShadow: "0em -0.05em 0.2em burlywood", }}>Daily Planner</h2>
 
-      <NavBar navBarDetails={appNavBar}/>
+      <NavBar navBarDetails={appNavBar} />
 
       <Outlet />
     </>
@@ -22,3 +22,9 @@ function App() {
 }
 
 export default App
+
+const inlineStyles = {
+  heading: {
+    textAlign: "center",
+  }
+}
