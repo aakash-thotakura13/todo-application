@@ -1,8 +1,8 @@
 import React from "react";
 import axios from "axios";
 
-// const url = `https://todo-application-personal-use.onrender.com/todos`;
-const url = "http://localhost:3000/todos";
+const url = `https://todo-application-personal-use.onrender.com/todos`;
+// const url = "http://localhost:3000/todos";
 
 export const AllTodos = () => {
 
