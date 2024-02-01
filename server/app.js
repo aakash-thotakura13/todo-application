@@ -1,8 +1,9 @@
 "use strict";
 require('dotenv').config();
-const cors = require("cors")
 const express = require("express");
+const cors = require("cors")
 const dbInit = require('./mongoose/dbInit');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -10,10 +11,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors());
 
-// initiating database
+// Initiating Mongodb Database:
 dbInit();
 
 app.use("/todos", require("./mongoose/httpRequests/todos"));
+app.use("/schedules", require("./mongoose/httpRequests/schedules"));
 
 app.get("/", (req, res) => {
   res.json({ message: "server is running!" });
