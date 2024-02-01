@@ -14,7 +14,7 @@ export const router = createBrowserRouter([
         element: <Suspense
           fallback={<div>Loading...</div>}>
           <AllTodos />
-        </Suspense>
+        </Suspense>,
       },
       {
         path: "schedules",

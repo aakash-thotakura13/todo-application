@@ -70,14 +70,14 @@ const TodoItem = ({ id, todo, deleteTodo, updateTodo }) => {
 export const AllSchedules = () => {
   const [allTasks, setAllTasks] = useState([]);
 
-  console.log(allTasks.map(todo => {
-    const mongodbDate = new Date(todo.completedBy); // MongoDB date
-    const date = mongodbDate.getDate(); // Get hours
-    const hours = mongodbDate.getHours(); // Get hours
-    const minutes = mongodbDate.getMinutes(); // Get minutes
-    // const seconds = mongodbDate.getSeconds(); // Get seconds
-    return { date, time: `${hours}:${minutes}` }
-  }))
+  // console.log(allTasks.map(todo => {
+  //   const mongodbDate = new Date(todo.completedBy); // MongoDB date
+  //   const date = mongodbDate.getDate(); // Get hours
+  //   const hours = mongodbDate.getHours(); // Get hours
+  //   const minutes = mongodbDate.getMinutes(); // Get minutes
+  //   // const seconds = mongodbDate.getSeconds(); // Get seconds
+  //   return { date, time: `${hours}:${minutes}` }
+  // }))
 
   const getTasks = async () => {
     try {
