@@ -7,52 +7,47 @@ const Todos = require("../../mongoose/schemas/todo");
 router
   .route("/")
   .get(async (req, res) => {
-    await Todos
-      .find()
-      .then((todos) => res.status(200).send(todos))
-      .catch(err => res.status(404).send(`Error while fetching todos ${err}`));
+    try {
+      const tasks = await Todos.find();
+      res.status(200).send(tasks);
+    } catch (err) {
+      res.status(404).send(`Error while fetching tasks ${err}`);
+    }
   })
   .post(async (req, res) => {
     try {
       const documentCreated = await Todos.create(req.body);
       res.status(200).send(documentCreated);
-    } catch (error) {
-      res.status(400).send(error);
+    } catch (err) {
+      res.status(400).send(err);
     }
-  })
+  });
 
 router
-  .route(`/:id`)
+  .route("/:id")
   .get(async (req, res) => {
     try {
-      await Todos
-        .findById(req.params.id)
-        .then(result => res.status(200).send(result))
-        .catch(err => res.status(404).send(err));
-    } catch (error) {
-      res.status(400).send(error);
+      const result = await Todos.findById(req.params.id);
+      res.status(200).send(result);
+    } catch (err) {
+      res.status(400).send(err);
     }
   })
   .put(async (req, res) => {
     try {
-      await Todos
-        .findByIdAndUpdate(req.params.id, { $set: req.body })
-        .then(result => res.status(200).send(result))
-        .catch(err => res.status(404).send(err));
-    } catch (error) {
-      res.status(400).send(error);
+      const result = await Todos.findByIdAndUpdate(req.params.id, { $set: req.body });
+      res.status(200).send(result);
+    } catch (err) {
+      res.status(400).send(err);
     }
   })
   .delete(async (req, res) => {
     try {
-      await Todos
-        .findByIdAndDelete(req.params.id)
-        .then(result => res.status(200).send(result))
-        .catch(err => res.status(404).send(err));
-    } catch (error) {
-      res.status(400).send(error);
+      const result = await Todos.findByIdAndDelete(req.params.id);
+      res.status(200).send(result);
+    } catch (err) {
+      res.status(400).send(err);
     }
-  })
-
+  });
 
 module.exports = router;

@@ -17,6 +17,6 @@ const todoSchema = new mongoose.Schema({
     required: true,
     default: false,
   }
-});
+}, { collection: "todos" }); // Explicitly specify the collection name
 
 module.exports = mongoose.model("Todo", todoSchema);
