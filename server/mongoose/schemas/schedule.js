@@ -7,13 +7,9 @@ const scheduleSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
-  completeBy: {
+  completedBy: {
     type: Date,
     // default: Date.now,
-    required: true,
-  },
-  completedAt: {
-    type: Date,
     required: true,
   },
   isChecked: {
