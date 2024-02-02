@@ -5,18 +5,23 @@ import { userInfo } from "../states/userState";
 
 const StorageFunctionality = () => {
 
-  const userInfo = { "userName": "mahesh murthy", "password": "12345" }
+  const userInfo = { "userName": "aakash@todoApp.com", "password": "119900" }
 
   const user = localStorage.setItem("userInfo", JSON.stringify(userInfo));
   const getUserData = JSON.parse(localStorage.getItem("userInfo"));
   console.log(getUserData);
 
+  console.log({
+    "userName": "aakash@todoApp.com",
+    "password": "119900"
+  })
+
   return (
     <div>
 
       <h2>Storage Functionality</h2>
-      <p style={{fontSize:"0.8em",}}>User Name: {getUserData.userName[0].toUpperCase() + getUserData.userName.slice(1)}</p>
-      <p style={{fontSize:"0.8em",}}>Password: {getUserData.password}</p>
+      <p style={{ fontSize: "0.8em", }}>User Name: {getUserData.userName}</p>
+      <p style={{ fontSize: "0.8em", }}>Password: {getUserData.password}</p>
 
     </div>
   )
@@ -57,7 +62,7 @@ export const Login = () => {
     const checkUser = await axios.post(`http://localhost:3000/users/login`, user);
     setUser(checkUser.data);
   }
-  
+
 
   return (
     <>
@@ -72,12 +77,12 @@ export const Login = () => {
 
         <div style={{ margin: "0.6em 0.1em", display: "grid", gridTemplateColumns: "0.6fr 1.4fr", alignItems: "center", }}>
           <label htmlFor="username">UserName</label>
-          <input type="text" placeholder="Enter User Name..." name="username" id="username" style={{ padding: "0.4em 0.75em", margin: "0.25em 0.5em", border:"0.2em solid #343456", borderRadius:"1em", }} />
+          <input type="text" placeholder="Enter User Name..." name="username" id="username" style={{ padding: "0.4em 0.75em", margin: "0.25em 0.5em", border: "0.2em solid #343456", borderRadius: "1em", }} />
         </div>
 
         <div style={{ margin: "0.6em 0.1em", display: "grid", gridTemplateColumns: "0.6fr 1.4fr", alignItems: "center", }}>
           <label htmlFor="password">Password</label>
-          <input type="text" placeholder="Enter Password..." name="password" id="password" style={{ padding: "0.4em 0.75em", margin: "0.25em 0.5em", border:"0.2em solid #343456", borderRadius:"1em", }} />
+          <input type="text" placeholder="Enter Password..." name="password" id="password" style={{ padding: "0.4em 0.75em", margin: "0.25em 0.5em", border: "0.2em solid #343456", borderRadius: "1em", }} />
         </div>
 
         <div style={{ width: "85%", margin: "0.15em auto", display: "grid", gridTemplateColumns: "1fr", alignItems: "center", }}>
