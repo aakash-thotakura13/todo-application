@@ -1,11 +1,13 @@
 
 import { Outlet } from 'react-router-dom';
 import './App.css';
-import NavBar from './subComponents/NavBar';
+import NavBar from './components/NavBar';
 
 const appNavBar = [
   { title: "Todos", specifiedPath: "todos" },
   { title: "Schedules", specifiedPath: "schedules" },
+  { title: "Login", specifiedPath: "login" },
+  // { title: "SignUp", specifiedPath: "signup" },
 ]
 
 function App() {
