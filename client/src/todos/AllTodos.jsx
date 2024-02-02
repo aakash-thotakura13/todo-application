@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import axios from "axios";
 
-const url = `https://todo-application-personal-use.onrender.com/todos`;
-// const url = "http://localhost:3000/todos";
+// const url = `https://todo-application-personal-use.onrender.com/todos`;
+const url = "http://localhost:3000/todos";
 
 const TodoForm = ({ handleSubmit }) => {
   const [todo, setTodo] = useState("");
