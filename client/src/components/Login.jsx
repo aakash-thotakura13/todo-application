@@ -50,6 +50,9 @@ export const UserNamePopup = ({ name }) => {
 
 export const Login = () => {
 
+  const url = `https://todo-application-personal-use.onrender.com/users/login`;
+  // const url = "http://localhost:3000/users/login";
+
   const [user, setUser] = useRecoilState(userInfo);
 
   async function handleSubmit(e) {
@@ -59,7 +62,7 @@ export const Login = () => {
       password: e.target.password.value,
     }
     console.log(e.target.username.value, e.target.password.value);
-    const checkUser = await axios.post(`http://localhost:3000/users/login`, user);
+    const checkUser = await axios.post(url, user);
     setUser(checkUser.data);
   }
 
