@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
-// const url = `https://todo-application-personal-use.onrender.com/schedules`;
-const url = "http://localhost:3000/schedules";
+const url = `https://todo-application-personal-use.onrender.com/schedules`;
+// const url = "http://localhost:3000/schedules";
 
 const TodoForm = ({ handleSubmit }) => {
   const [todo, setTodo] = useState("");
