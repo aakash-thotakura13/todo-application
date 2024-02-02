@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 
-const Todos = require("../../mongoose/schemas/todo");
+const Todos = require("../models/todo");
 
 
 router
@@ -68,7 +68,7 @@ router
       const result = await Todos.findById(req.params.id);
       res.status(200).send(result);
     } catch (err) {
-      res.status(400).send(err);
+      res.status(404).send(err);
     }
   })
   .put(async (req, res) => {
@@ -76,7 +76,7 @@ router
       const result = await Todos.findByIdAndUpdate(req.params.id, { $set: req.body });
       res.status(200).send(result);
     } catch (err) {
-      res.status(400).send(err);
+      res.status(404).send(err);
     }
   })
   .delete(async (req, res) => {
@@ -84,7 +84,7 @@ router
       const result = await Todos.findByIdAndDelete(req.params.id);
       res.status(200).send(result);
     } catch (err) {
-      res.status(400).send(err);
+      res.status(404).send(err);
     }
   });
 

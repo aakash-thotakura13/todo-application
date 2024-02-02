@@ -14,8 +14,9 @@ app.use(cors());
 // Initiating Mongodb Database:
 dbInit();
 
-app.use("/todos", require("./mongoose/httpRequests/todos"));
 app.use("/schedules", require("./mongoose/httpRequests/schedules"));
+app.use("/todos", require("./mongoose/httpRequests/todos"));
+app.use("/users", require("./mongoose/httpRequests/users"));
 
 app.get("/", (req, res) => {
   res.json({ message: "server is running!" });

@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 
-const Schedules = require("../schemas/schedule");
+const Schedules = require("../models/schedule");
 
 router
   .route("/")
