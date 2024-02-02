@@ -1,0 +1,94 @@
+import axios from "axios";
+import { useEffect, useState } from "react";
+import { useRecoilState } from "recoil";
+import { userInfo } from "../states/userState";
+
+const StorageFunctionality = () => {
+
+  const userInfo = { "userName": "mahesh murthy", "password": "12345" }
+
+  const user = localStorage.setItem("userInfo", JSON.stringify(userInfo));
+  const getUserData = JSON.parse(localStorage.getItem("userInfo"));
+  console.log(getUserData);
+
+  return (
+    <div>
+
+      <h2>Storage Functionality</h2>
+      <p style={{fontSize:"0.8em",}}>User Name: {getUserData.userName[0].toUpperCase() + getUserData.userName.slice(1)}</p>
+      <p style={{fontSize:"0.8em",}}>Password: {getUserData.password}</p>
+
+    </div>
+  )
+}
+
+export const UserNamePopup = ({ name }) => {
+
+  const [showPopup, setShowPopup] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowPopup(false);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return showPopup
+    ? <div style={{ textAlign: "center" }}>
+      <h2>hi {name}!</h2>
+      <p>Welcome to Daily Planner</p>
+    </div>
+    : null;
+
+};
+
+
+export const Login = () => {
+
+  const [user, setUser] = useRecoilState(userInfo);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    const user = {
+      userName: e.target.username.value,
+      password: e.target.password.value,
+    }
+    console.log(e.target.username.value, e.target.password.value);
+    const checkUser = await axios.post(`http://localhost:3000/users/login`, user);
+    setUser(checkUser.data);
+  }
+  
+
+  return (
+    <>
+
+      {
+        user._id !== undefined
+          ? <UserNamePopup name={user.userName} />
+          : null
+      }
+
+      <form method="post" onSubmit={handleSubmit} >
+
+        <div style={{ margin: "0.6em 0.1em", display: "grid", gridTemplateColumns: "0.6fr 1.4fr", alignItems: "center", }}>
+          <label htmlFor="username">UserName</label>
+          <input type="text" placeholder="Enter User Name..." name="username" id="username" style={{ padding: "0.4em 0.75em", margin: "0.25em 0.5em", border:"0.2em solid #343456", borderRadius:"1em", }} />
+        </div>
+
+        <div style={{ margin: "0.6em 0.1em", display: "grid", gridTemplateColumns: "0.6fr 1.4fr", alignItems: "center", }}>
+          <label htmlFor="password">Password</label>
+          <input type="text" placeholder="Enter Password..." name="password" id="password" style={{ padding: "0.4em 0.75em", margin: "0.25em 0.5em", border:"0.2em solid #343456", borderRadius:"1em", }} />
+        </div>
+
+        <div style={{ width: "85%", margin: "0.15em auto", display: "grid", gridTemplateColumns: "1fr", alignItems: "center", }}>
+          <button style={{ padding: "0.2em", margin: "0.5em 2em", borderRadius: "1.5em", border: "0.15em solid #656565" }}>Submit</button>
+          <button style={{ padding: "0.2em", margin: "0.5em 2em", borderRadius: "1.5em", border: "0.15em solid #656565" }}>SignUp</button>
+        </div>
+
+      </form>
+
+      <StorageFunctionality />
+
+    </>
+  )
+}
