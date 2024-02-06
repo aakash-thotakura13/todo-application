@@ -1,19 +1,23 @@
 "use strict";
-const mongoose = require("mongoose");
+const { mongoose, Schema } = require("mongoose");
 
 const userSchema = new mongoose.Schema({
   userName: {
     type: String,
-    requred: true,
+    required: true,
     lowercase: true,
     trim: true,
+    unique: true,
   },
   password: {
     type: String,
-    requred: true,
+    required: true,
     trim: true,
-    minLength: 3,
-  }
-}, { collation: "users" }); // Explicitly specify the collection name
+    minlength: 3,
+    unique: true,
+  },
+  todos: [{ type: mongoose.Schema.Types.ObjectId, ref: "Todo", }],
+  schedules: [{ type: mongoose.Schema.Types.ObjectId, ref: "Schedule", }],
+}, { collection: "users" }); // Explicitly specify the collection name
 
 module.exports = mongoose.model("User", userSchema);

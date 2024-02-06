@@ -1,15 +1,33 @@
-// "use strict";
+"use strict";
 const express = require("express");
 const router = express.Router();
 
 const Users = require("../models/user");
+const todo = require("../models/todo");
+
 
 router
   .route("/")
   .get(async (req, res) => {
     try {
-      const tasks = await Users.find().collation({ locale: 'en', });
+      const tasks = await Users.find();
       res.status(200).send(tasks);
+    } catch (err) {
+      res.status(404).send(`Error while fetching tasks \n ${err}`);
+    }
+  })
+
+router
+  .route(`/:id`)
+  .get(async (req, res) => {
+    try {
+
+      await Users
+        .findById(req.params.id)
+        .populate({ path: "todos" })
+        .then(user => res.status(200).send(user))
+        .catch(err => res.status(404).send(err));
+
     } catch (err) {
       res.status(404).send(`Error while fetching tasks \n ${err}`);
     }
