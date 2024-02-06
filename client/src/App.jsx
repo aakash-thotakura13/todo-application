@@ -10,7 +10,7 @@ const appNavBar = [
   // { title: "SignUp", specifiedPath: "signup" },
 ]
 
-function App() {
+function App() { 
 
   return (
     <>
