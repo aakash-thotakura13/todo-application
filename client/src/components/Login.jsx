@@ -1,7 +1,8 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { useRecoilState } from "recoil";
+import { useRecoilState, useRecoilValue } from "recoil";
 import { userInfo } from "../states/userState";
+import { loginURL } from "../states/urlState";
 
 // const StorageFunctionality = () => {
 
@@ -46,9 +47,11 @@ export const UserNamePopup = ({ name }) => {
 export const Login = () => {
 
   // const url = `https://todo-application-personal-use.onrender.com/users/login`;
-  const url = "http://localhost:3000/users/login";
+  // const url = "http://localhost:3000/users/login";
 
   const [user, setUser] = useRecoilState(userInfo);
+  
+  const url = useRecoilValue(loginURL);
 
   async function handleSubmit(e) {
     e.preventDefault();
