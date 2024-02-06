@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { NavLink } from "react-router-dom";
+import { useState, useEffect } from "react";
 import axios from "axios";
 
-const url = `https://todo-application-personal-use.onrender.com/todos`;
-// const url = "http://localhost:3000/todos";
+import { useRecoilValue } from "recoil";
+import { todosURL } from "../states/urlState";
+import { userInfo } from "../states/userState"
+
 
 const TodoForm = ({ handleSubmit }) => {
   const [todo, setTodo] = useState("");
@@ -11,7 +12,7 @@ const TodoForm = ({ handleSubmit }) => {
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    handleSubmit({ task: todo, date });
+    handleSubmit({ task: todo, date, });
     setTodo("");
     setDate("");
   };
@@ -53,6 +54,7 @@ const TodoItem = ({ id, todo, deleteTodo, updateTodo }) => {
 
           <details open>
             <summary style={{ listStyle: "none", marginLeft: "0.45em", textDecoration: todo.isChecked ? "#010101 line-through" : "none", fontStyle: todo.isChecked ? "italic" : "normal", }}>{todo.task}</summary>
+            {/* <p>{todo._id}</p> */}
             <p style={{ fontSize: "0.8em", }}>Date: {new Date(todo.completeBy).toLocaleDateString()}</p>
             <p style={{ fontSize: "0.8em", }}>Time: {new Date(todo.completeBy).toLocaleTimeString()}</p>
           </details>
@@ -68,10 +70,14 @@ const TodoItem = ({ id, todo, deleteTodo, updateTodo }) => {
 
 export const AllTodos = () => {
 
+  const url = useRecoilValue(todosURL);
+
   const [allTasks, setAllTasks] = useState([]);
 
   const [basedOnDate, setBasedOnDate] = useState(false);
   const [basedOnDone, setBasedOnDone] = useState(false);
+
+  const _userInfo = useRecoilValue(userInfo)
 
   const getTasks = async () => {
     try {
@@ -87,8 +93,9 @@ export const AllTodos = () => {
   }, []);
 
   const handleSubmit = async (newPost) => {
+    const data = { ...newPost, user: _userInfo._id, };
     try {
-      await axios.post(url, newPost);
+      await axios.post(url, data);
       getTasks();
     } catch (error) {
       console.error("Error posting todo", error);
@@ -96,8 +103,12 @@ export const AllTodos = () => {
   };
 
   const handleDeleteTodo = async (id) => {
+    const reqData = {
+      id,
+      user_id: _userInfo._id,
+    }
     try {
-      await axios.delete(`${url}/${id}`);
+      await axios.delete(`${url}/${id}`, { data: reqData });
       getTasks();
     } catch (error) {
       console.error("Error deleting todo", error);
@@ -128,6 +139,7 @@ export const AllTodos = () => {
       console.error("Error sorting based 'on date'", err);
     }
   };
+
   const sortBasedOnDone = async () => {
     try {
       setBasedOnDone(!basedOnDone);
@@ -143,12 +155,6 @@ export const AllTodos = () => {
   return (
     <>
       <TodoForm handleSubmit={handleSubmit} />
-
-      <p>Mention two sort() options based on:</p>
-      <ul>
-        <li>date - completeBy</li>
-        <li>boolean - isChecked</li>
-      </ul>
 
       <hr style={{ margin: "0.75em" }} />
 
