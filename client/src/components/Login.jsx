@@ -1,7 +1,8 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { useRecoilState } from "recoil";
+import { useRecoilState, useRecoilValue } from "recoil";
 import { userInfo } from "../states/userState";
+import { loginURL } from "../states/urlState";
 // import { combinedURL, loginURL } from "../states/urlState";
 
 export const UserNamePopup = ({ name }) => {
@@ -26,10 +27,10 @@ export const UserNamePopup = ({ name }) => {
 
 export const Login = () => {
 
-  const url = `https://todo-application-personal-use.onrender.com/users/login`;
+  // const url = `https://todo-application-personal-use.onrender.com/users/login`;
   // const url = "http://localhost:3000/users/login";
 
-  // const url = useRecoilValue(loginURL);
+  const url = useRecoilValue(loginURL);
 
   const [user, setUser] = useRecoilState(userInfo);
 
