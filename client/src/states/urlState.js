@@ -6,7 +6,7 @@ const productionURL = "https://todo-application-personal-use.onrender.com";
 
 export const baseURL = atom({
   key: "baseURL",
-  default: localHostURL || productionURL,
+  default: productionURL,
 });
 
 export const loginURL = selector({
