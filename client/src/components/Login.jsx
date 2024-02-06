@@ -3,29 +3,24 @@ import { useEffect, useState } from "react";
 import { useRecoilState } from "recoil";
 import { userInfo } from "../states/userState";
 
-const StorageFunctionality = () => {
+// const StorageFunctionality = () => {
 
-  const userInfo = { "userName": "aakash@todoApp.com", "password": "119900" }
+//   const userInfo = { "userName": "aakash@todoApp.com", "password": "119900" }
 
-  const user = localStorage.setItem("userInfo", JSON.stringify(userInfo));
-  const getUserData = JSON.parse(localStorage.getItem("userInfo"));
-  console.log(getUserData);
+//   const user = localStorage.setItem("userInfo", JSON.stringify(userInfo));
+//   const getUserData = JSON.parse(localStorage.getItem("userInfo"));
+//   console.log(getUserData);
 
-  console.log({
-    "userName": "aakash@todoApp.com",
-    "password": "119900"
-  })
+//   return (
+//     <div>
 
-  return (
-    <div>
+//       <h2>Storage Functionality</h2>
+//       <p style={{ fontSize: "0.8em", }}>User Name: {getUserData.userName}</p>
+//       <p style={{ fontSize: "0.8em", }}>Password: {getUserData.password}</p>
 
-      <h2>Storage Functionality</h2>
-      <p style={{ fontSize: "0.8em", }}>User Name: {getUserData.userName}</p>
-      <p style={{ fontSize: "0.8em", }}>Password: {getUserData.password}</p>
-
-    </div>
-  )
-}
+//     </div>
+//   )
+// }
 
 export const UserNamePopup = ({ name }) => {
 
@@ -50,8 +45,8 @@ export const UserNamePopup = ({ name }) => {
 
 export const Login = () => {
 
-  const url = `https://todo-application-personal-use.onrender.com/users/login`;
-  // const url = "http://localhost:3000/users/login";
+  // const url = `https://todo-application-personal-use.onrender.com/users/login`;
+  const url = "http://localhost:3000/users/login";
 
   const [user, setUser] = useRecoilState(userInfo);
 
@@ -95,7 +90,7 @@ export const Login = () => {
 
       </form>
 
-      <StorageFunctionality />
+      {/* <StorageFunctionality /> */}
 
     </>
   )
