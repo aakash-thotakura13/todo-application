@@ -2,7 +2,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { useRecoilState, useRecoilValue } from "recoil";
 import { userInfo } from "../states/userState";
-import { loginURL } from "../states/urlState";
+import { combinedURL, loginURL } from "../states/urlState";
 
 // const StorageFunctionality = () => {
 
@@ -46,9 +46,11 @@ export const UserNamePopup = ({ name }) => {
 export const Login = () => {
 
   const url = useRecoilValue(loginURL);
+  const combinedUrl = useRecoilValue(combinedURL);
   const [user, setUser] = useRecoilState(userInfo);
-  
-  
+
+  console.log(combinedUrl);
+
   async function handleSubmit(e) {
     e.preventDefault();
     const user = {
