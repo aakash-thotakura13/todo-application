@@ -70,13 +70,12 @@ const TodoItem = ({ id, todo, deleteTodo, updateTodo }) => {
 
 export const AllTodos = () => {
 
-  const url = useRecoilValue(todosURL);
-
   const [allTasks, setAllTasks] = useState([]);
-
+  
   const [basedOnDate, setBasedOnDate] = useState(false);
   const [basedOnDone, setBasedOnDone] = useState(false);
-
+  
+  const url = useRecoilValue(todosURL);
   const _userInfo = useRecoilValue(userInfo)
 
   const getTasks = async () => {
