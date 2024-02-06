@@ -1,27 +1,8 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { useRecoilState, useRecoilValue } from "recoil";
+import { useRecoilState } from "recoil";
 import { userInfo } from "../states/userState";
-import { combinedURL, loginURL } from "../states/urlState";
-
-// const StorageFunctionality = () => {
-
-//   const userInfo = { "userName": "aakash@todoApp.com", "password": "119900" }
-
-//   const user = localStorage.setItem("userInfo", JSON.stringify(userInfo));
-//   const getUserData = JSON.parse(localStorage.getItem("userInfo"));
-//   console.log(getUserData);
-
-//   return (
-//     <div>
-
-//       <h2>Storage Functionality</h2>
-//       <p style={{ fontSize: "0.8em", }}>User Name: {getUserData.userName}</p>
-//       <p style={{ fontSize: "0.8em", }}>Password: {getUserData.password}</p>
-
-//     </div>
-//   )
-// }
+// import { combinedURL, loginURL } from "../states/urlState";
 
 export const UserNamePopup = ({ name }) => {
 
@@ -45,11 +26,12 @@ export const UserNamePopup = ({ name }) => {
 
 export const Login = () => {
 
-  const url = useRecoilValue(loginURL);
-  const combinedUrl = useRecoilValue(combinedURL);
-  const [user, setUser] = useRecoilState(userInfo);
+  const url = `https://todo-application-personal-use.onrender.com/users/login`;
+  // const url = "http://localhost:3000/users/login";
 
-  console.log(combinedUrl);
+  // const url = useRecoilValue(loginURL);
+
+  const [user, setUser] = useRecoilState(userInfo);
 
   async function handleSubmit(e) {
     e.preventDefault();
