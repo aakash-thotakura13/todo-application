@@ -48,15 +48,15 @@ export const Login = () => {
   const url = useRecoilValue(loginURL);
   const [user, setUser] = useRecoilState(userInfo);
   
-  console.log(url);
-
+  
   async function handleSubmit(e) {
     e.preventDefault();
     const user = {
       userName: e.target.username.value,
       password: e.target.password.value,
     }
-    // console.log(e.target.username.value, e.target.password.value);
+    console.log(url);
+    console.log(e.target.username.value, e.target.password.value);
     const checkUser = await axios.post(url, user);
     setUser(checkUser.data);
   }

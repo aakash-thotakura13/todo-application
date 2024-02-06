@@ -1,8 +1,12 @@
+
 import { atom, selector } from "recoil";
+
+const localHostURL = "http://localhost:3000";
+const productionURL = "https://todo-application-personal-use.onrender.com";
 
 export const baseURL = atom({
   key: "baseURL",
-  default: "http://localhost:3000" || `https://todo-application-personal-use.onrender.com`,
+  default: localHostURL || productionURL,
 });
 
 export const loginURL = selector({
