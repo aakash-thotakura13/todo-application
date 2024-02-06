@@ -40,18 +40,15 @@ export const UserNamePopup = ({ name }) => {
       <p>Welcome to Daily Planner</p>
     </div>
     : null;
-
 };
 
 
 export const Login = () => {
 
-  // const url = `https://todo-application-personal-use.onrender.com/users/login`;
-  // const url = "http://localhost:3000/users/login";
-
+  const url = useRecoilValue(loginURL);
   const [user, setUser] = useRecoilState(userInfo);
   
-  const url = useRecoilValue(loginURL);
+  console.log(url);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -59,7 +56,7 @@ export const Login = () => {
       userName: e.target.username.value,
       password: e.target.password.value,
     }
-    console.log(e.target.username.value, e.target.password.value);
+    // console.log(e.target.username.value, e.target.password.value);
     const checkUser = await axios.post(url, user);
     setUser(checkUser.data);
   }
@@ -92,8 +89,6 @@ export const Login = () => {
         </div>
 
       </form>
-
-      {/* <StorageFunctionality /> */}
 
     </>
   )
