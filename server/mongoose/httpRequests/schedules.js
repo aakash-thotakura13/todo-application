@@ -1,8 +1,10 @@
 "use strict";
 const express = require("express");
 const router = express.Router();
+const { default: mongoose } = require("mongoose");
 
 const Schedules = require("../models/schedule");
+const Users = require("../models/user");
 
 router
   .route("/")
@@ -17,9 +19,16 @@ router
   .post(async (req, res) => {
     try {
       const documentCreated = await Schedules.create(req.body);
-      res.status(200).send(documentCreated);
+      let ObjId = new mongoose.Types.ObjectId(documentCreated.id);
+
+      const updatedUser = await Users.findOneAndUpdate(
+        { _id: req.body.user },
+        { $push: { todos: ObjId } },
+      );
+
+      res.status(200).send({ message: "Task ADDED SUCCESSFULLY", updatedUser });
     } catch (err) {
-      res.status(400).send(err);
+      res.status(404).send(err);
     }
   });
 
@@ -79,6 +88,10 @@ router
   })
   .delete(async (req, res) => {
     try {
+      const updatedUser = await Users.findOneAndUpdate(
+        { _id: req.body.user },
+        { $pull: { todos: req.params.id } },
+      )
       const result = await Schedules.findByIdAndDelete(req.params.id);
       res.status(200).send(result);
     } catch (err) {

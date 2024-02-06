@@ -1,9 +1,10 @@
 "use strict";
 const express = require("express");
 const router = express.Router();
+const { default: mongoose } = require("mongoose");
 
 const Todos = require("../models/todo");
-
+const Users = require("../models/user");
 
 router
   .route("/")
@@ -18,7 +19,14 @@ router
   .post(async (req, res) => {
     try {
       const documentCreated = await Todos.create(req.body);
-      res.status(200).send(documentCreated);
+      let ObjId = new mongoose.Types.ObjectId(documentCreated.id);
+
+      const updatedUser = await Users.findOneAndUpdate(
+        { _id: req.body.user },
+        { $push: { todos: ObjId } },
+      );
+
+      res.status(200).send({ message: "Task ADDED SUCCESSFULLY", updatedUser });
     } catch (err) {
       res.status(404).send(err);
     }
@@ -81,8 +89,12 @@ router
   })
   .delete(async (req, res) => {
     try {
+      const updateUser = await Users.findByIdAndUpdate(
+        { _id: req.body.user_id },
+        { $pull: { 'todos': req.body.id } },
+      );
       const result = await Todos.findByIdAndDelete(req.params.id);
-      res.status(200).send(result);
+      res.status(200).json({ updateUser, result });
     } catch (err) {
       res.status(404).send(err);
     }
