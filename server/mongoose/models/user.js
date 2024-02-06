@@ -1,19 +1,19 @@
 "use strict";
-const { mongoose, Schema } = require("mongoose");
+const { mongoose } = require("mongoose");
 
 const userSchema = new mongoose.Schema({
   userName: {
     type: String,
-    required: true,
     lowercase: true,
+    required: [true, "Please provide your User Name"],
     trim: true,
-    unique: true,
+    unique: [true, "Username already exists"]
   },
   password: {
     type: String,
-    required: true,
+    minlength: 5,
+    required: [true, "Please provide your password"],
     trim: true,
-    minlength: 3,
     unique: true,
   },
   todos: [{ type: mongoose.Schema.Types.ObjectId, ref: "Todo", }],
