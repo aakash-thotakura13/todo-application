@@ -19,7 +19,7 @@ app.use("/todos", require("./mongoose/httpRequests/todos"));
 app.use("/users", require("./mongoose/httpRequests/users"));
 
 app.get("/", (req, res) => {
-  res.json({ message: "server is running!" });
+  res.json({ message: "Server is Running!" });
 })
 
 app.get("*", (req, res) => {
