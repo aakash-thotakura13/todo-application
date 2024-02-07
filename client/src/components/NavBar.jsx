@@ -13,8 +13,6 @@ export default function NavBar({ navBarDetails }) {
                   color: isActive ? "#ffffffde" : "#242424",
                   backgroundColor: isActive ? "#242424" : "#ffffffde",
                   borderRadius: isActive ? "1em" : "0.7em",
-                  padding: "0 0.4em",
-                  margin: "0.1em 0",
                 })}
                 to={`${ele.specifiedPath}`}
               >
@@ -29,7 +27,6 @@ export default function NavBar({ navBarDetails }) {
 }
 
 const inlineStyles = {
-
   navBar: {
     display: "flex",
     justifyContent: "space-around",
@@ -39,5 +36,7 @@ const inlineStyles = {
   navLink: {
     textDecoration: "none",
     fontWeight: "bold",
+    padding: "0 0.45em",
+    margin: "0.1em 0",
   }
 }
