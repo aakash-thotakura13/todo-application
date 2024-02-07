@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 
 import { useRecoilValue } from "recoil";
-import { todosURL, userTodos } from "../states/urlState";
+import { todosURL, userTasks } from "../states/urlState";
 import { userInfo } from "../states/userState"
 
 
@@ -86,7 +86,7 @@ export const AllTodos = () => {
   const [basedOnDate, setBasedOnDate] = useState(false);
   const [basedOnDone, setBasedOnDone] = useState(false);
 
-  const getUserUrl = useRecoilValue(userTodos);
+  const getUserUrl = useRecoilValue(userTasks);
   const todosUrl = useRecoilValue(todosURL);
   const _userInfo = useRecoilValue(userInfo)
 

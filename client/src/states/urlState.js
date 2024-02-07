@@ -9,8 +9,8 @@ export const baseURL = atom({
   default: localHostURL || productionURL,
 });
 
-export const userTodos = selector({
-  key: "userTodos",
+export const userTasks = selector({
+  key: "userTasks",
   get: ({get})=>{
     return get(baseURL) + "/users";
   }

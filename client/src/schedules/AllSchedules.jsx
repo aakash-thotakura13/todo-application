@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 
 import { useRecoilValue } from "recoil";
-import { schedulesURL, schedulesURL } from "../states/urlState";
+import { schedulesURL, userTasks } from "../states/urlState";
 import { userInfo } from "../states/userState"
 
 
@@ -95,7 +95,7 @@ export const AllSchedules = () => {
   const [basedOnDate, setBasedOnDate] = useState(false);
   const [basedOnDone, setBasedOnDone] = useState(false);
 
-  const getUserUrl = useRecoilValue(userTodos);
+  const getUserUrl = useRecoilValue(userTasks);
   const schedulesUrl = useRecoilValue(schedulesURL);
   const _userInfo = useRecoilValue(userInfo)
 
