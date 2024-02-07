@@ -6,8 +6,15 @@ const productionURL = "https://todo-application-personal-use.onrender.com";
 
 export const baseURL = atom({
   key: "baseURL",
-  default: productionURL,
+  default: localHostURL || productionURL,
 });
+
+export const userTodos = selector({
+  key: "userTodos",
+  get: ({get})=>{
+    return get(baseURL) + "/users";
+  }
+})
 
 export const loginURL = selector({
   key: "loginURL",
@@ -15,6 +22,13 @@ export const loginURL = selector({
     return get(baseURL) + "/users/login";
   },
 });
+
+export const signUpURL = selector({
+  key:"signUpURL",
+  get: ({get})=>{
+    return get(baseURL) + "/users/signup";
+  }
+})
 
 export const todosURL = selector({
   key: "todosURL",
