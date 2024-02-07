@@ -1,24 +1,49 @@
 
-import { Outlet } from 'react-router-dom';
 import './App.css';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+
 import NavBar from './components/NavBar';
 
-const appNavBar = [
-  { title: "Todos", specifiedPath: "todos" },
-  { title: "Schedules", specifiedPath: "schedules" },
-  { title: "Login", specifiedPath: "login" },
-  // { title: "SignUp", specifiedPath: "signup" },
-]
 
-function App() { 
+function App() {
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const appNavBar = [
+    {
+      title: "Todos",
+      specifiedPath: "todos",
+    },
+    {
+      title: "Schedules",
+      specifiedPath: "schedules",
+    },
+    {
+      title: location.pathname === '/signup' ? "Signup" : "Login",
+      specifiedPath: location.pathname === '/signup' ? "signup" : "login",
+    },
+  ];
+
+
+  function redirectFunc() {
+    navigate("/");
+  }
 
   return (
     <>
-      <h2 style={{ ...inlineStyles.heading, textShadow: "0em -0.05em 0.2em burlywood", }}>Daily Planner</h2>
+
+      <h2
+        onClick={() => redirectFunc()}
+        style={{ ...inlineStyles.heading, }}
+      >
+        Daily Planner
+      </h2>
 
       <NavBar navBarDetails={appNavBar} />
 
       <Outlet />
+
     </>
   )
 }
@@ -28,5 +53,6 @@ export default App
 const inlineStyles = {
   heading: {
     textAlign: "center",
+    textShadow: "-0.05em -0.05em 0.2em burlywood",
   }
 }
