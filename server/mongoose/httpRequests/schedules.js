@@ -10,7 +10,7 @@ router
   .route("/")
   .get(async (req, res) => {
     try {
-      const tasks = await Schedules.find();
+      const tasks = await Schedules.findById();
       res.status(200).send(tasks);
     } catch (err) {
       res.status(404).send(`Error while fetching tasks ${err}`);
@@ -23,7 +23,7 @@ router
 
       const updatedUser = await Users.findOneAndUpdate(
         { _id: req.body.user },
-        { $push: { todos: ObjId } },
+        { $push: { todos: ObjId }, },
       );
 
       res.status(200).send({ message: "Task ADDED SUCCESSFULLY", updatedUser });
@@ -31,6 +31,7 @@ router
       res.status(404).send(err);
     }
   });
+
 
 router
   .route("/date")
@@ -75,7 +76,7 @@ router
       const result = await Schedules.findById(req.params.id);
       res.status(200).send(result);
     } catch (err) {
-      res.status(400).send(err);
+      res.status(404).send(err);
     }
   })
   .put(async (req, res) => {
@@ -83,20 +84,21 @@ router
       const result = await Schedules.findByIdAndUpdate(req.params.id, { $set: req.body });
       res.status(200).send(result);
     } catch (err) {
-      res.status(400).send(err);
+      res.status(404).send(err);
     }
   })
   .delete(async (req, res) => {
     try {
-      const updatedUser = await Users.findOneAndUpdate(
-        { _id: req.body.user },
-        { $pull: { todos: req.params.id } },
-      )
+      const updateUser = await Users.findByIdAndUpdate(
+        { _id: req.body.user_id },
+        { $pull: { 'todos': req.body.id } },
+      );
       const result = await Schedules.findByIdAndDelete(req.params.id);
-      res.status(200).send(result);
+      res.status(200).json({ updateUser, result });
     } catch (err) {
-      res.status(400).send(err);
+      res.status(404).send(err);
     }
   });
+
 
 module.exports = router;

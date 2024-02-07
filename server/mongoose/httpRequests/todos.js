@@ -10,7 +10,7 @@ router
   .route("/")
   .get(async (req, res) => {
     try {
-      const tasks = await Todos.find();
+      const tasks = await Todos.findById();
       res.status(200).send(tasks);
     } catch (err) {
       res.status(404).send(`Error while fetching tasks ${err}`);
@@ -23,7 +23,7 @@ router
 
       const updatedUser = await Users.findOneAndUpdate(
         { _id: req.body.user },
-        { $push: { todos: ObjId } },
+        { $push: { todos: ObjId }, },
       );
 
       res.status(200).send({ message: "Task ADDED SUCCESSFULLY", updatedUser });
