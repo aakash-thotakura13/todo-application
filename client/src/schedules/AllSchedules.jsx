@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 
 import { useRecoilValue } from "recoil";
-import { schedulesURL } from "../states/urlState";
+import { schedulesURL, schedulesURL } from "../states/urlState";
 import { userInfo } from "../states/userState"
 
 
@@ -77,22 +77,35 @@ const TodoItem = ({ id, todo, deleteTodo, updateTodo }) => {
   );
 };
 
+const SortButton = ({ title, basedOn, handleOnClick }) => {
+  return <button
+    style={{
+      ...inlineStyles.navLinkStyle,
+      backgroundColor: basedOn ? "#ffffffde" : null,
+      color: basedOn ? "#242424" : null,
+    }}
+    onClick={handleOnClick}
+  >{title}</button>
+}
+
 export const AllSchedules = () => {
 
   const [allTasks, setAllTasks] = useState([]);
-  
+
   const [basedOnDate, setBasedOnDate] = useState(false);
   const [basedOnDone, setBasedOnDone] = useState(false);
-  
-  const url = useRecoilValue(schedulesURL);
-  const _userInfo = useRecoilValue(userInfo);
+
+  const getUserUrl = useRecoilValue(userTodos);
+  const schedulesUrl = useRecoilValue(schedulesURL);
+  const _userInfo = useRecoilValue(userInfo)
 
   const getTasks = async () => {
     try {
-      const result = await axios.get(url);
-      setAllTasks(result.data);
+      const result = await axios.get(`${getUserUrl}/todos/${_userInfo._id}`);
+      typeof (result.data) === "string" ? setAllTasks([]) : setAllTasks(result.data.todos);
     } catch (err) {
       console.log("Request Canceled", err.message);
+      setAllTasks([]);
     }
   };
 
@@ -101,9 +114,9 @@ export const AllSchedules = () => {
   }, []);
 
   const handleSubmit = async (newPost) => {
-    console.log(newPost);
+    const data = { ...newPost, user: _userInfo._id, };
     try {
-      await axios.post(url, newPost);
+      await axios.post(schedulesUrl, data);
       getTasks();
     } catch (error) {
       console.error("Error posting todo", error);
@@ -112,11 +125,11 @@ export const AllSchedules = () => {
 
   const handleDeleteTodo = async (id) => {
     const reqData = {
-      todo_id: id,
-      user_id: _userInfo._id
+      id,
+      user_id: _userInfo._id,
     }
     try {
-      await axios.delete(`${url}/${id}`, { data: reqData });
+      await axios.delete(`${schedulesUrl}/${id}`, { data: reqData });
       getTasks();
     } catch (error) {
       console.error("Error deleting todo", error);
@@ -125,39 +138,42 @@ export const AllSchedules = () => {
 
   const handleUpdateTodo = async (id) => {
     try {
-      const specificTodo = await axios.get(`${url}/${id}`);
+      const specificTodo = await axios.get(`${schedulesUrl}/${id}`);
       const updatedData = {
         ...specificTodo.data,
         isChecked: !specificTodo.data.isChecked,
       };
-      await axios.put(`${url}/${id}`, updatedData);
+      await axios.put(`${schedulesUrl}/${id}`, updatedData);
       getTasks();
     } catch (error) {
       console.error("Error updating todo", error);
     }
   };
 
-  const sortBasedOnDate = async () => {
-    try {
-      setBasedOnDate(!basedOnDate);
-      const updatedUrl = basedOnDate ? url : `${url}/date`;
-      const result = await axios.get(updatedUrl);
-      setAllTasks(result.data);
-    } catch (err) {
-      console.log("Error while fetching tasks", err);
-    }
-  };
-
   const sortBasedOnDone = async () => {
     try {
       setBasedOnDone(!basedOnDone);
-      const updatedUrl = basedOnDone ? url : `${url}/done`;
-      const result = await axios.get(updatedUrl);
-      setAllTasks(result.data);
-    } catch (err) {
-      console.log("Error while fetching tasks", err);
+      const updated = basedOnDone ? schedulesUrl : `${getUserUrl}/schedules/done/${_userInfo._id}`;
+      await axios.get(updated)
+        .then(result => setAllTasks(result.data.todos))
+        .catch(error => console.log(error))
+    } catch (error) {
+      console.error("Error sorting based \n 'on done':", error);
     }
   };
+
+  const sortBasedOnDate = async () => {
+    try {
+      setBasedOnDate(!basedOnDate);
+      const updated = basedOnDate ? schedulesUrl : `${getUserUrl}/schedules/date/${_userInfo._id}`;
+      await axios.get(updated)
+        .then(result => setAllTasks(result.data.todos))
+        .catch(error => console.log(error))
+    } catch (error) {
+      console.error("Error sorting based \n 'on date':", error);
+    }
+  };
+
 
   return (
     <>
@@ -169,29 +185,25 @@ export const AllSchedules = () => {
         <button style={{ borderRadius: "1em", padding: "0.25em 0.5em", border: "0.1em solid #555555", }}>Sort: </button>
         <div style={{}}>
 
-          <button
-            style={{
-              ...inlineStyles.navLinkStyle,
-              backgroundColor: basedOnDate ? "#ffffffde" : null,
-              color: basedOnDate ? "#242424" : null,
-            }}
-            onClick={sortBasedOnDate}
-          >Date</button>
+          <SortButton title="Done" basedOn={basedOnDone} handleOnClick={sortBasedOnDone} />
 
-          <button
-            style={{
-              ...inlineStyles.navLinkStyle,
-              backgroundColor: basedOnDone ? "#ffffffde" : null,
-              color: basedOnDone ? "#242424" : null,
-            }}
-            onClick={sortBasedOnDone}
-          >Done</button>
+          <SortButton title="Date" basedOn={basedOnDate} handleOnClick={sortBasedOnDate} />
 
         </div>
       </div>
 
       <hr style={{ margin: "0.75em" }} />
-      <TodoList tasks={allTasks} deleteTodo={handleDeleteTodo} updateTodo={handleUpdateTodo} />
+
+      {
+        allTasks.length > 0
+          ? <TodoList
+            tasks={allTasks}
+            deleteTodo={handleDeleteTodo}
+            updateTodo={handleUpdateTodo}
+          />
+          : <></>
+      }
+      
     </>
   );
 };
