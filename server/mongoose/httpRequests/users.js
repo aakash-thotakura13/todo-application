@@ -70,8 +70,10 @@ router
     try {
       await Users
         .findById(req.params.id)
-        .populate({ path: "todos" })
-        .sort({ completeBy: 1 })
+        .populate({
+          path: "todos",
+          options: { sort: { completeBy: 1 } }
+        })
         .then(user => res.status(200).send(user))
         .catch(err => res.status(404).send(err));
     } catch (error) {
@@ -85,8 +87,10 @@ router
     try {
       await Users
         .findById(req.params.id)
-        .populate({ path: "todos" })
-        .sort({ isChecked: 1 })
+        .populate({
+          path: "todos",
+          options: { sort: { isChecked: 1 } }
+        })
         .then(user => res.status(200).send(user))
         .catch(err => res.status(404).send(err));
     } catch (error) {
@@ -115,8 +119,10 @@ router
     try {
       await Users
         .findById(req.params.id)
-        .populate({ path: "schedules" })
-        .sort({ completeBy: 1 })
+        .populate({
+          path: "schedules",
+          options: { sort: { completeBy: 1 } }
+        })
         .then(user => res.status(200).send(user))
         .catch(err => res.status(404).send(err));
     } catch (error) {
@@ -130,30 +136,16 @@ router
     try {
       await Users
         .findById(req.params.id)
-        .populate({ path: "schedules" })
-        .sort({ isChecked: 1 })
+        .populate({
+          path: "schedules",
+          options: { sort: { isChecked: 1 } }
+        })
         .then(user => res.status(200).send(user))
         .catch(err => res.status(404).send(err));
     } catch (error) {
       res.status(404).send(`Error while fetching tasks \n ${err}`);
     }
   })
-
-router
-  .route(`/:id/done/date` || `/:id/date/done`)
-  .get(async (req, res) => {
-    try {
-      await Users
-        .findById(req.params.id)
-        .populate({ path: "todos" })
-        .sort({ isChecked: 1, completeBy: 1 })
-        .then(user => res.status(200).send(user))
-        .catch(err => res.status(404).send(err));
-    } catch (error) {
-      res.status(404).send(`Error while fetching tasks \n ${err}`);
-    }
-  })
-
 
 
 module.exports = router
