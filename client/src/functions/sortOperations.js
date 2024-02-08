@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const sortBasedFunction = async (
+export const sortingFunction = async (
   sort, setSort, setTasks,
   url, updatedUrl
 ) => {

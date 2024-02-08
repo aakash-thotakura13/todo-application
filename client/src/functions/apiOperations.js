@@ -22,10 +22,3 @@ export const getTasks = async (url, setTasks) => {
     setTasks([]);
   }
 };
-
-
-export const postTask = async () => {
-  let url = useRecoilValue(schedulesURL);
-  console.log(url);
-}
-
