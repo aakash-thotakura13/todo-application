@@ -4,9 +4,9 @@ import { atom, selector } from "recoil";
 const localHostURL = "http://localhost:3000";
 const productionURL = "https://todo-application-personal-use.onrender.com";
 
-export const baseURL = atom({
+export const baseURL = selector({
   key: "baseURL",
-  default: localHostURL || productionURL,
+  default: window.location.hostname === "localhost" ? localHostURL : productionURL,
 });
 
 export const userTasks = selector({
