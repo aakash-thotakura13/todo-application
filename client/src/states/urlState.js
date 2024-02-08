@@ -11,7 +11,7 @@ export const baseURL = atom({
 
 export const userTasks = selector({
   key: "userTasks",
-  get: ({get})=>{
+  get: ({ get }) => {
     return get(baseURL) + "/users";
   }
 })
@@ -24,8 +24,8 @@ export const loginURL = selector({
 });
 
 export const signUpURL = selector({
-  key:"signUpURL",
-  get: ({get})=>{
+  key: "signUpURL",
+  get: ({ get }) => {
     return get(baseURL) + "/users/signup";
   }
 })

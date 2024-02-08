@@ -1,6 +1,5 @@
 import axios from "axios";
-import { useRecoilValue } from "recoil";
-import { schedulesURL } from "../states/urlState";
+
 
 export const getTasks = async (url, setTasks) => {
   const arrayName = url.split("/")[4]

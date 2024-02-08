@@ -1,28 +1,32 @@
 
 export const TodoItem = ({ id, todo, deleteTodo, updateTodo }) => {
-  
+
   return (
-    <li key={id} style={{ listStyle: "none", }}>
-      <div style={{ padding: "0.2em", display: "grid", gridTemplateColumns: "0.1fr 1.9fr", alignItems: "center" }}>
+    <li key={id} style={{ ...inlineStyles.listItem }}>
+      <div style={{ ...inlineStyles.container }}>
 
-        <input type="checkbox" checked={todo.isChecked ? true : false} onChange={() => updateTodo(todo._id)} style={{ width: "1em", height: "1em", marginRight: "0.2em", }} />
+        <input type="checkbox" checked={todo.isChecked ? true : false} onChange={() => updateTodo(todo._id)} style={{ ...inlineStyles.checkbox }} />
 
-        <div style={{ display: "grid", gridTemplateColumns: "1.9fr 0.1fr", justifyContent: "space-between", alignItems: "center", }}>
+        <div style={{ ...inlineStyles.innerContainer }}>
 
-          <details open style={{ width: "100%", aspectRatio: "5/1", }}>
+          <details open style={{ ...inlineStyles.details }}>
 
-            <summary style={{ listStyle: "none", margin: "0.4em 0.8em", textDecoration: todo.isChecked ? "#010101 line-through" : "none", fontStyle: todo.isChecked ? "italic" : "normal", }}>
+            <summary style={{
+              ...inlineStyles.summary,
+              textDecoration: todo.isChecked ? "#010101 line-through" : "none",
+              fontStyle: todo.isChecked ? "italic" : "normal",
+            }}>
               {todo.task}
             </summary>
 
-            <section style={{ display: "flex", justifyContent: "space-between", margin: "0.4em 0.8em", }}>
+            <section style={{ ...inlineStyles.section }}>
               <p style={{ fontSize: "0.7em", textAlign: "left", }}>Date: {new Date(todo.completeBy).toLocaleDateString()}</p>
               <p style={{ fontSize: "0.7em", textAlign: "right", }}>Time: {new Date(todo.completeBy).toLocaleTimeString()}</p>
             </section>
 
           </details>
 
-          <button style={{ border: "0.1em groove red", padding: "0.2em 0.5em", borderRadius: "50%", }} onClick={() => deleteTodo(todo._id)} >X</button>
+          <button style={{ ...inlineStyles.button }} onClick={() => deleteTodo(todo._id)} >X</button>
 
         </div>
 
@@ -32,4 +36,45 @@ export const TodoItem = ({ id, todo, deleteTodo, updateTodo }) => {
 
     </li>
   );
+};
+
+const inlineStyles = {
+  listItem: {
+    listStyle: "none",
+  },
+  container: {
+    padding: "0.2em",
+    display: "grid",
+    gridTemplateColumns: "0.1fr 1.9fr",
+    alignItems: "center",
+  },
+  checkbox: {
+    width: "1em",
+    height: "1em",
+    marginRight: "0.2em",
+  },
+  innerContainer: {
+    display: "grid",
+    gridTemplateColumns: "1.9fr 0.1fr",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  details: {
+    width: "100%",
+    aspectRatio: "5/1",
+  },
+  summary: {
+    listStyle: "none",
+    margin: "0.4em 0.8em",
+  },
+  section: {
+    display: "flex",
+    justifyContent: "space-between",
+    margin: "0.4em 0.8em",
+  },
+  button: {
+    border: "0.1em groove red",
+    padding: "0.2em 0.5em",
+    borderRadius: "50%",
+  },
 };

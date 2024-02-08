@@ -39,6 +39,8 @@ export const Login = () => {
       password: e.target.password.value,
     }
 
+    console.log(url);
+
     const checkUser = await axios.post(url, user);
     setUser(checkUser.data);
   }
