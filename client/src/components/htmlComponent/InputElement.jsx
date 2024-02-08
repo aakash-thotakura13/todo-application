@@ -1,5 +1,5 @@
 
-export const InputElement = ({ type, title, name, id, value, setFunction }) => {
+export const InputElement = ({ type, title,  value, setFunction }) => {
   return <div style={{ ...inlineStyle.divContainer }}>
     <label htmlFor={title}>{title.toUpperCase()[0] + title.slice(1)}: </label>
     <input
@@ -10,6 +10,7 @@ export const InputElement = ({ type, title, name, id, value, setFunction }) => {
       placeholder={`Enter your ${title}`}
       style={{ ...inlineStyle.inputContainer }}
       onChange={e => setFunction(e.target.value)}
+      autoComplete="off"
     />
   </div>
 }
@@ -22,7 +23,8 @@ const inlineStyle = {
     alignItems: "center",
   },
   inputContainer: {
-    padding: "0.4em",
-    border: "0.1em solid #555555",
+    padding: "0.5em",
+    border: "0.2em solid #545453",
+    borderRadius: "1em",
   }
 }

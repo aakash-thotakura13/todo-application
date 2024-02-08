@@ -17,7 +17,7 @@ export const SortButton = ({ title, basedOn, handleOnClick }) => {
 
 const inlineStyles = {
   buttonStyle: {
-    border: "0.1em solid #555555",
+    border: "0.2em solid #545454",
     borderRadius: "1em",
     fontSize: "0.9em",
     margin: "0 0.45em",

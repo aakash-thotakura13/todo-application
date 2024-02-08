@@ -33,12 +33,12 @@ function App() {
   return (
     <>
 
-      <h2
+      <h1
         onClick={() => redirectFunc()}
         style={{ ...inlineStyles.heading, }}
       >
         Daily Planner
-      </h2>
+      </h1>
 
       <NavBar navBarDetails={appNavBar} />
 
