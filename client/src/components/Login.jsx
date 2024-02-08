@@ -1,9 +1,10 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { useRecoilState, useRecoilValue } from "recoil";
+import { useNavigate } from "react-router";
+
 import { userInfo } from "../states/userState";
 import { loginURL } from "../states/urlState";
-import { useNavigate } from "react-router";
 
 
 export const UserNamePopup = ({ name }) => {
@@ -34,18 +35,19 @@ export const Login = () => {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    console.log(window.location.hostname);
+    console.log(url);
+
     const user = {
       userName: e.target.username.value,
       password: e.target.password.value,
     }
 
-    console.log(url);
-
     const checkUser = await axios.post(url, user);
     setUser(checkUser.data);
   }
 
-  function redirectToSignUp() {
+  function navSignUp() {
     navigate("/signup");
   }
 
@@ -77,7 +79,7 @@ export const Login = () => {
       </form>
 
       <div style={{ width: "85%", margin: "0.15em auto", display: "grid", gridTemplateColumns: "1fr", alignItems: "center", }}>
-        <button onClick={() => redirectToSignUp()} style={{ padding: "0.2em", margin: "0.5em 2em", borderRadius: "1.5em", border: "0.15em solid #656565" }}>SignUp</button>
+        <button onClick={() => navSignUp()} style={{ padding: "0.2em", margin: "0.5em 2em", borderRadius: "1.5em", border: "0.15em solid #656565" }}>SignUp</button>
       </div>
 
     </>
