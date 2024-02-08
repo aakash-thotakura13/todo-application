@@ -32,43 +32,6 @@ router
     }
   });
 
-
-router
-  .route("/date")
-  .get(async (req, res) => {
-    try {
-      const tasks = await Todos.find().sort({ completeBy: 1, });
-      res.status(200).send(tasks);
-    } catch (err) {
-      res.status(404).send(`Error while fetching tasks ${err}`);
-    }
-  });
-
-
-router
-  .route("/done")
-  .get(async (req, res) => {
-    try {
-      const tasks = await Todos.find().sort({ isChecked: 1, });
-      res.status(200).send(tasks);
-    } catch (err) {
-      res.status(404).send(`Error while fetching tasks ${err}`);
-    }
-  });
-
-
-router
-  .route("/done/date" || "/date/done")
-  .get(async (req, res) => {
-    try {
-      const tasks = await Todos.find().sort({ isChecked: 1, completeBy: 1 });
-      res.status(200).send(tasks);
-    } catch (err) {
-      res.status(404).send(`Error while fetching tasks ${err}`);
-    }
-  });
-
-
 router
   .route("/:id")
   .get(async (req, res) => {

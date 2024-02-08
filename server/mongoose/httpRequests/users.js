@@ -57,7 +57,7 @@ router
     try {
       await Users.
         findByIdAndDelete(req.params.id)
-        .then(response => res.status(200).send("Deleted Successfully"))
+        .then(response => res.status(200).send("Deleted Successfully", response))
         .catch(err => res.status(404).send("User not found for deletion \n ", err));
     } catch (error) {
       res.status(500).send(`Error while fetching tasks \n ${err}`);

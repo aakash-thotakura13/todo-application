@@ -23,7 +23,7 @@ router
 
       const updatedUser = await Users.findOneAndUpdate(
         { _id: req.body.user },
-        { $push: { todos: ObjId }, },
+        { $push: { schedules: ObjId }, },
       );
 
       res.status(200).send({ message: "Task ADDED SUCCESSFULLY", updatedUser });
@@ -31,43 +31,6 @@ router
       res.status(404).send(err);
     }
   });
-
-
-router
-  .route("/date")
-  .get(async (req, res) => {
-    try {
-      const tasks = await Schedules.find().sort({ completeBy: 1, });
-      res.status(200).send(tasks);
-    } catch (err) {
-      res.status(404).send(`Error while fetching tasks ${err}`);
-    }
-  });
-
-
-router
-  .route("/done")
-  .get(async (req, res) => {
-    try {
-      const tasks = await Schedules.find().sort({ isChecked: 1, });
-      res.status(200).send(tasks);
-    } catch (err) {
-      res.status(404).send(`Error while fetching tasks ${err}`);
-    }
-  });
-
-
-router
-  .route("/done/date" || "/date/done")
-  .get(async (req, res) => {
-    try {
-      const tasks = await Schedules.find().sort({ isChecked: 1, completeBy: 1 });
-      res.status(200).send(tasks);
-    } catch (err) {
-      res.status(404).send(`Error while fetching tasks ${err}`);
-    }
-  });
-
 
 router
   .route("/:id")
@@ -91,7 +54,7 @@ router
     try {
       const updateUser = await Users.findByIdAndUpdate(
         { _id: req.body.user_id },
-        { $pull: { 'todos': req.body.id } },
+        { $pull: { 'schedule': req.body.id } },
       );
       const result = await Schedules.findByIdAndDelete(req.params.id);
       res.status(200).json({ updateUser, result });
