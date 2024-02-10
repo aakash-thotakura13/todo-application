@@ -7,6 +7,7 @@ import { userInfo } from "../states/userState";
 import { useRecoilValue } from "recoil";
 import { Suspense } from "react";
 import { SignUp } from "../components/SignUp";
+import { Analytics } from "../components/Analytics";
 
 const PrivateRoutes = ({ component: Component }) => {
   const _userInfo = useRecoilValue(userInfo);
@@ -45,6 +46,14 @@ export const router = createBrowserRouter([
       {
         path: "signup",
         element: <SignUp />,
+      },
+      {
+        path: "analytics",
+        element: <Suspense
+          fallback={<div>Loading...</div>}>
+          <PrivateRoutes component={Analytics}
+          />
+        </Suspense>,
       },
     ],
   },
