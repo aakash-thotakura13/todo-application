@@ -1,38 +1,27 @@
-
 export const TodoItem = ({ id, todo, deleteTodo, updateTodo }) => {
 
   return (
-    <li key={id} style={{ ...inlineStyles.listItem }}>
-      <div style={{ ...inlineStyles.container }}>
+    <li key={id} style={{ ...inlineStyles.listItem, backgroundColor: todo.isChecked ? "antiquewhite" : "#110101", }}>
 
-        <input type="checkbox" checked={todo.isChecked ? true : false} onChange={() => updateTodo(todo._id)} style={{ ...inlineStyles.checkbox }} />
+      <input type="checkbox" checked={todo.isChecked ? true : false} onChange={() => updateTodo(todo._id)} style={{ ...inlineStyles.checkbox }} />
 
-        <div style={{ ...inlineStyles.innerContainer }}>
+      <details open style={{ aspectRatio: "7/1", backgroundColor: todo.isChecked ? "antiquewhite" : "#110101", }}>
+        <summary style={{
+          ...inlineStyles.summary,
+          textDecoration: todo.isChecked ? "#110101 line-through" : "none",
+          color: todo.isChecked ? "#110101" : "antiquewhite",
+          backgroundColor: todo.isChecked ? "antiquewhite" : "#110101",
+        }}>
+          {todo.task}
+        </summary>
 
-          <details open style={{ ...inlineStyles.details }}>
+        <section style={{ ...inlineStyles.section, backgroundColor: todo.isChecked ? "antiquewhite" : "#110101", }}>
+          <p style={{ fontSize: "0.7em", color: todo.isChecked ? "#110101" : "antiquewhite", backgroundColor: todo.isChecked ? "antiquewhite" : "#110101", }}>Date: {new Date(todo.completeBy).toLocaleDateString()}</p>
+          <p style={{ fontSize: "0.7em", color: todo.isChecked ? "#110101" : "antiquewhite", backgroundColor: todo.isChecked ? "antiquewhite" : "#110101", }}>Time: {new Date(todo.completeBy).toLocaleTimeString()}</p>
+        </section>
+      </details>
 
-            <summary style={{
-              ...inlineStyles.summary,
-              textDecoration: todo.isChecked ? "#010101 line-through" : "none",
-              fontStyle: todo.isChecked ? "italic" : "normal",
-            }}>
-              {todo.task}
-            </summary>
-
-            <section style={{ ...inlineStyles.section }}>
-              <p style={{ fontSize: "0.7em", textAlign: "left", }}>Date: {new Date(todo.completeBy).toLocaleDateString()}</p>
-              <p style={{ fontSize: "0.7em", textAlign: "right", }}>Time: {new Date(todo.completeBy).toLocaleTimeString()}</p>
-            </section>
-
-          </details>
-
-          <button style={{ ...inlineStyles.button }} onClick={() => deleteTodo(todo._id)} >X</button>
-
-        </div>
-
-      </div>
-
-      <hr style={{ margin: "0em 2em", }} />
+      {todo.isChecked ? <button style={{ ...inlineStyles.button, }} onClick={() => deleteTodo(todo._id)} >X</button> : null}
 
     </li>
   );
@@ -40,41 +29,32 @@ export const TodoItem = ({ id, todo, deleteTodo, updateTodo }) => {
 
 const inlineStyles = {
   listItem: {
-    listStyle: "none",
-  },
-  container: {
-    padding: "0.2em",
+    padding: "0.4em",
+    margin: "0.2em 0.4em",
     display: "grid",
-    gridTemplateColumns: "0.1fr 1.9fr",
+    gridTemplateColumns: "0.1fr 1fr 0.1fr",
     alignItems: "center",
+    borderTop: "0.1em solid #565445",
+    borderBottom: "0.1em solid #565445",
+    borderRadius: "1em",
   },
   checkbox: {
-    width: "1em",
-    height: "1em",
-    marginRight: "0.2em",
-  },
-  innerContainer: {
-    display: "grid",
-    gridTemplateColumns: "1.9fr 0.1fr",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  details: {
-    width: "100%",
-    aspectRatio: "5/1",
+    width: "1.1em",
+    height: "1.1em",
+    marginRight: "0.7em",
   },
   summary: {
+    cursor: "pointer",
     listStyle: "none",
-    margin: "0.4em 0.8em",
   },
   section: {
     display: "flex",
     justifyContent: "space-between",
-    margin: "0.4em 0.8em",
   },
   button: {
-    border: "0.1em groove red",
     padding: "0.2em 0.5em",
+    margin: "0em 0.2em",
+    border: "0.2em groove red",
     borderRadius: "50%",
   },
 };
