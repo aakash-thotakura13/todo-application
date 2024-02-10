@@ -1,26 +1,26 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRecoilState, useRecoilValue } from "recoil";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 
 import { userInfo } from "../states/userState";
 import { loginURL } from "../states/urlState";
 
-
 export const UserNamePopup = ({ name }) => {
-
+  const navigate = useNavigate();
   const [showPopup, setShowPopup] = useState(true);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowPopup(false);
+      navigate("/todos")
     }, 3000);
     return () => clearTimeout(timer);
   }, []);
 
   return showPopup
     ? <div style={{ textAlign: "center" }}>
-      <h2>hi {name}!</h2>
+      <h2>Hi {name}!</h2>
       <p>Welcome to Daily Planner</p>
     </div>
     : null;
@@ -28,15 +28,12 @@ export const UserNamePopup = ({ name }) => {
 
 
 export const Login = () => {
-
   const navigate = useNavigate();
   const url = useRecoilValue(loginURL);
   const [user, setUser] = useRecoilState(userInfo);
 
   async function handleSubmit(e) {
     e.preventDefault();
-    console.log(window.location.hostname);
-    console.log(url);
 
     const user = {
       userName: e.target.username.value,
@@ -47,29 +44,20 @@ export const Login = () => {
     setUser(checkUser.data);
   }
 
-  function navSignUp() {
-    navigate("/signup");
-  }
-
   return (
     <>
-
-      {
-        user._id !== undefined
-          ? <UserNamePopup name={user.userName} />
-          : null
-      }
+      {user._id !== undefined ? <UserNamePopup name={user.userName} /> : null}
 
       <form method="post" onSubmit={handleSubmit} >
 
-        <div style={{ margin: "0.6em 0.1em", display: "grid", gridTemplateColumns: "0.6fr 1.4fr", alignItems: "center", }}>
-          <label htmlFor="username">UserName</label>
-          <input type="text" placeholder="Enter User User Name..." name="username" id="username" style={{ padding: "0.4em 0.75em", margin: "0.25em 0.5em", border: "0.2em solid #343456", borderRadius: "1em", }} />
+        <div style={{ margin: "0.6em 0.1em", display: "grid", gridTemplateColumns: "0.5fr 1.3fr", alignItems: "center", }}>
+          <label htmlFor="username">UserName:</label>
+          <input type="text" placeholder="Enter User Name..." name="username" id="username" style={{ padding: "0.5em", border: "0.2em solid #343456", borderRadius: "1em", }} />
         </div>
 
-        <div style={{ margin: "0.6em 0.1em", display: "grid", gridTemplateColumns: "0.6fr 1.4fr", alignItems: "center", }}>
-          <label htmlFor="password">Password</label>
-          <input type="text" placeholder="Enter Password..." name="password" id="password" style={{ padding: "0.4em 0.75em", margin: "0.25em 0.5em", border: "0.2em solid #343456", borderRadius: "1em", }} />
+        <div style={{ margin: "0.6em 0.1em", display: "grid", gridTemplateColumns: "0.5fr 1.3fr", alignItems: "center", }}>
+          <label htmlFor="password">Password:</label>
+          <input type="text" placeholder="Enter Password..." name="password" id="password" style={{ padding: "0.5em", border: "0.2em solid #343456", borderRadius: "1em", }} />
         </div>
 
         <div style={{ width: "85%", margin: "0.15em auto", display: "grid", gridTemplateColumns: "1fr", alignItems: "center", }}>
@@ -78,8 +66,8 @@ export const Login = () => {
 
       </form>
 
-      <div style={{ width: "85%", margin: "0.15em auto", display: "grid", gridTemplateColumns: "1fr", alignItems: "center", }}>
-        <button onClick={() => navSignUp()} style={{ padding: "0.2em", margin: "0.5em 2em", borderRadius: "1.5em", border: "0.15em solid #656565" }}>SignUp</button>
+      <div style={{ width: "85%", margin: "0.15em auto", display: "grid", gridTemplateColumns: "1fr", alignItems: "center" }}>
+        <button onClick={() => navigate("/signup")} style={{ padding: "0.2em", margin: "0.5em 2em", borderRadius: "1.5em", border: "0.15em solid #656565" }}>SignUp</button>
       </div>
 
     </>
