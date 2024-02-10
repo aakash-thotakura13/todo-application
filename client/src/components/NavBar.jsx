@@ -31,12 +31,12 @@ const inlineStyles = {
     display: "flex",
     justifyContent: "space-around",
     listStyle: "none",
-    margin: "0.4em 0.1em",
+    margin: "0.9em 0em 1.4em",
   },
   navLink: {
     textDecoration: "none",
     fontWeight: "bold",
-    padding: "0 0.45em",
+    padding: "0.2em 0.4em",
     margin: "0.1em 0",
   }
 }
