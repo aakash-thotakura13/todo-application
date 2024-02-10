@@ -10,7 +10,7 @@ router
   .route("/")
   .get(async (req, res) => {
     try {
-      const tasks = await Todos.findById();
+      const tasks = await Todos.find();
       res.status(200).send(tasks);
     } catch (err) {
       res.status(404).send(`Error while fetching tasks ${err}`);
