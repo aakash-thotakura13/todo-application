@@ -11,9 +11,17 @@ export const UserNamePopup = ({ name }) => {
   const [showPopup, setShowPopup] = useState(true);
 
   useEffect(() => {
+    const userAgent = navigator.userAgent;
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+
+    if (isMobile) {
+      console.log('The user has logged in from a mobile device');
+    } else {
+      console.log('The user has logged in from a PC');
+    }
     const timer = setTimeout(() => {
       setShowPopup(false);
-      navigate("/todos")
+      navigate("/daily-tasks")
     }, 3000);
     return () => clearTimeout(timer);
   }, []);

@@ -10,8 +10,8 @@ export default function NavBar({ navBarDetails }) {
               <NavLink
                 style={({ isActive, isPending, isTransitioning }) => ({
                   ...inlineStyles.navLink,
-                  color: isActive ? "#ffffffde" : "#242424",
-                  backgroundColor: isActive ? "#242424" : "#ffffffde",
+                  color: isActive ? "#110101" : "antiquewhite",
+                  backgroundColor: isActive ? "antiquewhite" : "#110101",
                   borderRadius: isActive ? "1em" : "0.7em",
                 })}
                 to={`${ele.specifiedPath}`}
