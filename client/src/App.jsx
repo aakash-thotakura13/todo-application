@@ -23,6 +23,10 @@ function App() {
       title: location.pathname === '/signup' ? "Signup" : "Login",
       specifiedPath: location.pathname === '/signup' ? "signup" : "login",
     },
+    {
+      title: "Daily",
+      specifiedPath: "daily-tasks",
+    },
   ];
 
 
@@ -54,5 +58,6 @@ const inlineStyles = {
   heading: {
     textAlign: "center",
     textShadow: "-0.05em -0.05em 0.2em burlywood",
+    cursor: "pointer",
   }
 }
