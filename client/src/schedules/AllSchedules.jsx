@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useState, useEffect } from "react";
-import { useRecoilValue } from "recoil";
+import { useRecoilState, useRecoilValue } from "recoil";
 
 import { schedulesURL, userTasks } from "../states/urlState";
 import { userInfo } from "../states/userState"
@@ -13,6 +13,7 @@ import { SortButton } from "../components/htmlComponent/SortButtonElement";
 
 import { sortingFunction } from "../functions/sortOperations";
 import { getTasks } from "../functions/apiOperations";
+import { allScheduleTasks } from "../states/taskStates";
 
 
 const TodoForm = ({ handleSubmit }) => {
@@ -38,7 +39,7 @@ const TodoForm = ({ handleSubmit }) => {
 
 export const AllSchedules = () => {
 
-  const [allTasks, setAllTasks] = useState([]);
+  const [allTasks, setAllTasks] = useRecoilState(allScheduleTasks);
 
   const [basedOnDate, setBasedOnDate] = useState(false);
   const [basedOnDone, setBasedOnDone] = useState(false);
