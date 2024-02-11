@@ -7,12 +7,14 @@ import { userInfo } from "../states/userState"
 
 import { TodoList } from "../components/TodoList";
 
+import { AnalysisComponent } from "../components/AnalysisComponent";
 import { ButtonElement } from "../components/htmlComponent/ButtonElement";
 import { InputElement } from "../components/htmlComponent/InputElement";
 import { SortButton } from "../components/htmlComponent/SortButtonElement";
 
-import { sortingFunction } from "../functions/sortOperations";
 import { getTasks } from "../functions/apiOperations";
+import { sortingFunction } from "../functions/sortOperations";
+
 import { allScheduleTasks } from "../states/taskStates";
 
 
@@ -43,15 +45,42 @@ export const AllSchedules = () => {
 
   const [basedOnDate, setBasedOnDate] = useState(false);
   const [basedOnDone, setBasedOnDone] = useState(false);
+  const [todaysTasks, setTodaysTasks] = useState(false);
+  const [previousTasks, setPreviousTasks] = useState(false);
 
   const getUserUrl = useRecoilValue(userTasks);
-  const schedulesUrl = useRecoilValue(schedulesURL);
   const _userInfo = useRecoilValue(userInfo)
+  const schedulesUrl = useRecoilValue(schedulesURL);
 
   useEffect(() => {
     getTasks(`${getUserUrl}/schedules/${_userInfo._id}`, setAllTasks);
   }, []);
 
+  const updatedTasks = allTasks
+    .filter(ele => {
+      if (todaysTasks) {
+        return new Date(ele.completeBy).getDate() === new Date().getDate() &&
+          new Date(ele.completeBy).getMonth() === new Date().getMonth() &&
+          new Date(ele.completeBy).getFullYear() === new Date().getFullYear()
+      } else if (previousTasks) {
+        return new Date(ele.completeBy) < new Date()
+      } else {
+        return ele
+      }
+    })
+    .map(ele => {
+      let difference = new Date(ele.completeBy).getTime() - new Date().getTime();
+      return {
+        ...ele,
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((difference % (1000 * 60)) / 1000),
+      }
+    })
+
+  const totalTasks = updatedTasks.length;
+  const totalChecked = updatedTasks.filter(ele => ele.isChecked).length;
 
   // curd operations based on schedulesUrl
   const handleSubmit = async (newPost) => {
@@ -94,15 +123,34 @@ export const AllSchedules = () => {
 
   return (
     <>
-
+      {/* TODO FORM SECTION */}
       <TodoForm handleSubmit={handleSubmit} />
       <hr style={{ margin: "0.75em" }} />
 
-      <section style={{ display: "flex", justifyContent: "space-between" }}>
+      {/* ANALYSIS SECTION */}
+      <AnalysisComponent count={totalTasks} checked={totalChecked} />
+      <hr style={{ margin: "0.75em" }} />
 
-        <SortButton title="Sort" basedOn="" handleOnClick="" />
+      {/* SORT SECTION */}
+      <section style={{ display: "grid", gridTemplateColumns: "0.2fr 1fr", }}>
 
-        <section>
+        <section style={{ borderRight: "0.15em solid #afafaf", padding: "0.5em 0em", borderRadius: "1em", }}>
+          <SortButton title="Sort" basedOn="" handleOnClick="" />
+        </section>
+
+        <section style={{ borderLeft: "0.15em solid #afafaf", padding: "0.5em 0em", borderRadius: "1em", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5em", }}>
+
+          <SortButton
+            title="Previous"
+            basedOn={previousTasks}
+            handleOnClick={() => setPreviousTasks(!previousTasks)}
+          />
+
+          <SortButton
+            title="Today"
+            basedOn={todaysTasks}
+            handleOnClick={() => setTodaysTasks(!todaysTasks)}
+          />
 
           <SortButton
             title="Date"
@@ -130,9 +178,9 @@ export const AllSchedules = () => {
 
       <hr style={{ margin: "0.75em" }} />
       {
-        allTasks.length > 0
+        allTasks !== undefined && allTasks.length > 0
           ? <TodoList
-            tasks={allTasks}
+            tasks={updatedTasks}
             deleteTodo={handleDeleteTodo}
             updateTodo={handleUpdateTodo}
           />
