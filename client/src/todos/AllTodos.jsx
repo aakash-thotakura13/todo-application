@@ -48,6 +48,8 @@ export const AllTodos = () => {
   const [todaysTasks, setTodaysTasks] = useState(false);
   const [previousTasks, setPreviousTasks] = useState(false);
 
+  const [displayForm, setDisplayForm] = useState(false);
+
   const getUserUrl = useRecoilValue(userTasks);
   const _userInfo = useRecoilValue(userInfo);
   const todosUrl = useRecoilValue(todosURL);
@@ -57,30 +59,30 @@ export const AllTodos = () => {
   }, []);
 
   const updatedTasks = allTasks
-  .filter(ele => {
-    if (todaysTasks) {
-      return new Date(ele.completeBy).getDate() === new Date().getDate() &&
-        new Date(ele.completeBy).getMonth() === new Date().getMonth() &&
-        new Date(ele.completeBy).getFullYear() === new Date().getFullYear()
-    } else if (previousTasks) {
-      return new Date(ele.completeBy) < new Date()
-    } else {
-      return ele
-    }
-  })
-  .map(ele => {
-    let difference = new Date(ele.completeBy).getTime() - new Date().getTime();
-    return {
-      ...ele,
-      days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-      hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-      minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
-      seconds: Math.floor((difference % (1000 * 60)) / 1000),
-    }
-  });
+    .filter(ele => {
+      if (todaysTasks) {
+        return new Date(ele.completeBy).getDate() === new Date().getDate() &&
+          new Date(ele.completeBy).getMonth() === new Date().getMonth() &&
+          new Date(ele.completeBy).getFullYear() === new Date().getFullYear()
+      } else if (previousTasks) {
+        return new Date(ele.completeBy) < new Date()
+      } else {
+        return ele
+      }
+    })
+    .map(ele => {
+      let difference = new Date(ele.completeBy).getTime() - new Date().getTime();
+      return {
+        ...ele,
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((difference % (1000 * 60)) / 1000),
+      }
+    });
 
-  const totalTasks = allTasks.length;
-  const totalChecked = allTasks.filter(ele => ele.isChecked).length;
+  const totalTasks = updatedTasks.length;
+  const totalChecked = updatedTasks.filter(ele => ele.isChecked).length;
 
   // curd operations based on todosUrl
   const handleSubmit = async (newPost) => {
@@ -91,6 +93,7 @@ export const AllTodos = () => {
     } catch (error) {
       console.error("Error posting todo", error);
     }
+    setDisplayForm(!displayForm);
   };
 
   const handleDeleteTodo = async (id) => {
@@ -123,8 +126,7 @@ export const AllTodos = () => {
 
   return (
     <>
-      {/* TODO FORM SECTION */}
-      <TodoForm handleSubmit={handleSubmit} />
+
       <hr style={{ margin: "0.75em" }} />
 
       {/* ANALYSIS SECTION */}
@@ -134,11 +136,11 @@ export const AllTodos = () => {
       {/* SORT SECTION */}
       <section style={{ display: "grid", gridTemplateColumns: "0.2fr 1fr", }}>
 
-        <section style={{ borderRight: "0.15em solid #afafaf", padding: "0.5em 0em", borderRadius: "1em", }}>
+        <section style={{ ...styles.sortSection, ...styles.sortSectionLeft }}>
           <SortButton title="Sort" basedOn="" handleOnClick="" />
         </section>
 
-        <section style={{ borderLeft: "0.15em solid #afafaf", padding: "0.5em 0em", borderRadius: "1em", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5em", }}>
+        <section style={{ ...styles.sortSection, ...styles.sortSectionRight }}>
 
           <SortButton
             title="Previous"
@@ -176,6 +178,21 @@ export const AllTodos = () => {
 
       </section>
 
+      {/* TODO FORM SECTION */}
+      <hr style={{ margin: "0.75em" }} />
+      {
+        displayForm
+          ? <TodoForm handleSubmit={handleSubmit} />
+          : <div style={{ display: "flex" }}>
+            <button
+              style={{ ...styles.displayFormButtonElement }}
+              onClick={() => setDisplayForm(!displayForm)}
+            >
+              Add
+            </button>
+          </div>
+      }
+
       <hr style={{ margin: "0.75em" }} />
       {
         allTasks !== undefined && allTasks.length > 0
@@ -190,3 +207,23 @@ export const AllTodos = () => {
     </>
   );
 };
+
+
+const styles = {
+  displayFormButtonElement: {
+    width: "80%", padding: "0.4em 0.8em", margin: "auto", border: "0.2em solid #545454", borderRadius: "1em",
+  },
+  sortSection: {
+    padding: "0.5em 0em",
+    borderRadius: "1em",
+  },
+  sortSectionLeft: {
+    borderRight: "0.15em solid #afafaf",
+  },
+  sortSectionRight: {
+    borderLeft: "0.15em solid #afafaf",
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "0.5em",
+  },
+}

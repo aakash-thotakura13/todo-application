@@ -48,6 +48,8 @@ export const AllSchedules = () => {
   const [todaysTasks, setTodaysTasks] = useState(false);
   const [previousTasks, setPreviousTasks] = useState(false);
 
+  const [displayForm, setDisplayForm] = useState(false);
+
   const getUserUrl = useRecoilValue(userTasks);
   const _userInfo = useRecoilValue(userInfo)
   const schedulesUrl = useRecoilValue(schedulesURL);
@@ -91,6 +93,7 @@ export const AllSchedules = () => {
     } catch (error) {
       console.error("Error posting todo", error);
     }
+    setDisplayForm(!displayForm);
   };
 
   const handleDeleteTodo = async (id) => {
@@ -123,8 +126,7 @@ export const AllSchedules = () => {
 
   return (
     <>
-      {/* TODO FORM SECTION */}
-      <TodoForm handleSubmit={handleSubmit} />
+
       <hr style={{ margin: "0.75em" }} />
 
       {/* ANALYSIS SECTION */}
@@ -134,11 +136,11 @@ export const AllSchedules = () => {
       {/* SORT SECTION */}
       <section style={{ display: "grid", gridTemplateColumns: "0.2fr 1fr", }}>
 
-        <section style={{ borderRight: "0.15em solid #afafaf", padding: "0.5em 0em", borderRadius: "1em", }}>
+        <section style={{ ...styles.sortSection, ...styles.sortSectionLeft }}>
           <SortButton title="Sort" basedOn="" handleOnClick="" />
         </section>
 
-        <section style={{ borderLeft: "0.15em solid #afafaf", padding: "0.5em 0em", borderRadius: "1em", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5em", }}>
+        <section style={{ ...styles.sortSection, ...styles.sortSectionRight }}>
 
           <SortButton
             title="Previous"
@@ -176,6 +178,21 @@ export const AllSchedules = () => {
 
       </section>
 
+      {/* TODO FORM SECTION */}
+      <hr style={{ margin: "0.75em" }} />
+      {
+        displayForm
+          ? <TodoForm handleSubmit={handleSubmit} />
+          : <div style={{ display: "flex" }}>
+            <button
+              style={{ ...styles.displayFormButtonElement }}
+              onClick={() => setDisplayForm(!displayForm)}
+            >
+              Add
+            </button>
+          </div>
+      }
+
       <hr style={{ margin: "0.75em" }} />
       {
         allTasks !== undefined && allTasks.length > 0
@@ -190,3 +207,23 @@ export const AllSchedules = () => {
     </>
   );
 };
+
+
+const styles = {
+  displayFormButtonElement: {
+    width: "80%", padding: "0.4em 0.8em", margin: "auto", border: "0.2em solid #545454", borderRadius: "1em",
+  },
+  sortSection: {
+    padding: "0.5em 0em",
+    borderRadius: "1em",
+  },
+  sortSectionLeft: {
+    borderRight: "0.15em solid #afafaf",
+  },
+  sortSectionRight: {
+    borderLeft: "0.15em solid #afafaf",
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "0.5em",
+  },
+}
