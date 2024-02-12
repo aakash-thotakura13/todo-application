@@ -4,12 +4,26 @@ import Chart from 'chart.js/auto';
 const SimpleGraph = ({ allTasks }) => {
 
   const tasksPerDay = allTasks
-    .map(ele => `${new Date(ele.completeBy).getMonth() + 1}/${new Date(ele.completeBy).getDate()}/${new Date(ele.completeBy).getUTCFullYear()}`)
+    // .map(ele => `${new Date(ele.completeBy).getMonth() + 1}/${new Date(ele.completeBy).getDate()}/${new Date(ele.completeBy).getUTCFullYear()}`)
+    // .filter(ele => new Date(ele.completeBy) < new Date())
+    .map(ele => `${new Date(ele.completeBy).getMonth() + 1}/${new Date(ele.completeBy).getDate()}`)
     .map(String)
+    .sort((a, b) => new Date(`2024/${a}`) - new Date(`2024/${b}`))
     .reduce((acc, currentValue) => {
       acc[currentValue] = (acc[currentValue] || 0) + 1;
       return acc;
     }, {});
+
+  const completedTasks = allTasks
+    .filter(ele => ele.isChecked === true)
+    .map(ele => `${new Date(ele.completeBy).getMonth() + 1}/${new Date(ele.completeBy).getDate()}`)
+    .map(String)
+    .sort((a, b) => new Date(`2024/${a}`) - new Date(`2024/${b}`))
+    .reduce((acc, currentValue) => {
+      acc[currentValue] = (acc[currentValue] || 0) + 1;
+      return acc;
+    }, {});
+
 
   const chartRef = useRef();
   const [chartInstance, setChartInstance] = useState(null);
@@ -21,23 +35,37 @@ const SimpleGraph = ({ allTasks }) => {
 
     const ctx = chartRef.current.getContext('2d');
     const newChartInstance = new Chart(ctx, {
-      type: 'line',
+      type: "line",
       data: {
         labels: [...Object.keys(tasksPerDay)],
         datasets: [{
-          label: 'Tasks/day',
-          data: [...Object.values(tasksPerDay)],
+          type: "line",
+          label: 'TTs/Day',
+          data: [...Object.values(completedTasks)],
           fill: true,
-          backgroundColor: 'rgba(201, 203, 207, 0.2)',
-          borderColor: 'rgb(201, 203, 207)',
+          backgroundColor: 'antiquewhite',
+          borderColor: 'burlywood',
           borderWidth: 1,
           tension: 0.4,
-        }]
+        }, {
+          type: "line",
+          label: 'CTs/Day',
+          data: [...Object.values(tasksPerDay)],
+          fill: true,
+          backgroundColor: 'burlywood',
+          borderColor: 'antiquewhite',
+          borderWidth: 1,
+          tension: 0.4,
+        },
+        ],
       },
       options: {
         scales: {
           y: {
             beginAtZero: true,
+            // stacked: true,
+          },
+          x: {
             stacked: true,
           },
         }
