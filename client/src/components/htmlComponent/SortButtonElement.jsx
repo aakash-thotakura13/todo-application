@@ -23,5 +23,6 @@ const inlineStyles = {
     margin: "0 0.45em",
     padding: "0.25em 0.5em",
     textDecoration: "none",
+    cursor:"pointer",
   }
 }
