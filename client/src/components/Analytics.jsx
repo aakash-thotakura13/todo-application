@@ -19,7 +19,9 @@ export const Analytics = () => {
       totalCount: allSchedules.length,
       pending: allSchedules.filter(e => e.isChecked === false).length,
     }
-  ]
+  ];
+
+  console.log(Date())
 
   return (
     <section>
@@ -27,11 +29,14 @@ export const Analytics = () => {
       <div style={{ ...styles.container }}>
 
         {
-          displayArray.map((ele, index) => {
+          displayArray.map((ele, id) => {
             return (
-              <section style={{ ...styles.innerContainer }} key={index}>
-                <h3 style={{ background: "transparent" }}>{ele.title[0].toUpperCase() + ele.title.slice(1)}</h3>
-                <h3 style={{ background: "transparent" }}>#{ele.totalCount}</h3>
+              <section style={{ ...styles.innerContainer }} key={id}>
+                <h3 style={{ backgroundColor: "transparent", padding: "0em 0.3em", display: "flex", justifyContent: "space-between", }}>
+                  <span style={{ backgroundColor: "transparent", }}>{ele.title[0].toUpperCase() + ele.title.slice(1)}</span>
+                  <span style={{ backgroundColor: "transparent", }}>#{ele.totalCount}</span>
+                </h3>
+                <hr style={{ margin: "0.6em 1.2em", }} />
                 <div style={{ ...styles.divContainer }}>
                   <p style={{ textAlign: "left", }}>Pending: </p>
                   <p>#{ele.pending}</p>
@@ -50,6 +55,11 @@ export const Analytics = () => {
       <SimpleGraph allTasks={allTodos} />
 
       <SimpleGraph allTasks={allSchedules} />
+
+      <div style={{ fontSize: "0.8em", fontWeight: "200", display: "flex", }}>
+        <p>TT/Day - TotalTasks/Day</p>
+        <p>CT/Day - CompletedTasks/Day</p>
+      </div>
 
     </section>
   )
@@ -73,5 +83,6 @@ const styles = {
     display: "grid",
     gridTemplateColumns: "0.8fr 0.2fr",
     backgroundColor: "transparent",
-  }
+    fontSize: "0.9em",
+  },
 }
