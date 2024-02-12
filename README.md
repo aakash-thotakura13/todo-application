@@ -1,2 +1,2 @@
 # todo-application
-> A simple TDOD Application, with CRUD Operations
+> A simple TODO Application, with CRUD Operations
