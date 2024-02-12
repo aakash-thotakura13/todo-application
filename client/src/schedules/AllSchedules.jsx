@@ -16,6 +16,7 @@ import { getTasks } from "../functions/apiOperations";
 import { sortingFunction } from "../functions/sortOperations";
 
 import { allScheduleTasks } from "../states/taskStates";
+import { Divider } from "../components/htmlComponent/DividerComponent";
 
 
 const TodoForm = ({ handleSubmit }) => {
@@ -127,13 +128,12 @@ export const AllSchedules = () => {
   return (
     <>
 
-      <hr style={{ margin: "0.75em" }} />
-
       {/* ANALYSIS SECTION */}
+      <Divider />
       <AnalysisComponent count={totalTasks} checked={totalChecked} />
-      <hr style={{ margin: "0.75em" }} />
 
       {/* SORT SECTION */}
+      <Divider />
       <section style={{ display: "grid", gridTemplateColumns: "0.2fr 1fr", }}>
 
         <section style={{ ...styles.sortSection, ...styles.sortSectionLeft }}>
@@ -179,7 +179,7 @@ export const AllSchedules = () => {
       </section>
 
       {/* TODO FORM SECTION */}
-      <hr style={{ margin: "0.75em" }} />
+      <Divider />
       {
         displayForm
           ? <TodoForm handleSubmit={handleSubmit} />
@@ -193,7 +193,14 @@ export const AllSchedules = () => {
           </div>
       }
 
-      <hr style={{ margin: "0.75em" }} />
+      <Divider />
+      <h3 style={{ textAlign: "right", padding: "0em 1em 0.5em", }}>
+        {
+          todaysTasks
+            ? "Today's Tasks" : previousTasks
+              ? "Previous Tasks" : "All Tasks"
+        }
+      </h3>
       {
         allTasks !== undefined && allTasks.length > 0
           ? <TodoList
@@ -203,7 +210,6 @@ export const AllSchedules = () => {
           />
           : <></>
       }
-
     </>
   );
 };
@@ -211,7 +217,12 @@ export const AllSchedules = () => {
 
 const styles = {
   displayFormButtonElement: {
-    width: "80%", padding: "0.4em 0.8em", margin: "auto", border: "0.2em solid #545454", borderRadius: "1em",
+    width: "80%",
+    padding: "0.4em 0.8em",
+    margin: "auto",
+    border: "0.2em solid #545454",
+    borderRadius: "1em",
+    cursor:"pointer",
   },
   sortSection: {
     padding: "0.5em 0em",
