@@ -1,33 +1,81 @@
 export const TodoItem = ({ id, todo, deleteTodo, updateTodo }) => {
 
+  const dyanamicStyling = {
+    bgClr: {
+      backgroundColor: todo.isChecked
+        ? "antiquewhite" : new Date(todo.completeBy) < new Date()
+          ? "#510101" : "#110101",
+    },
+    textClr: {
+      color: todo.isChecked ? "#110101" : "antiquewhite",
+    }
+  };
+
   return (
-    <li key={id} style={{ ...inlineStyles.listItem, backgroundColor: todo.isChecked ? "antiquewhite" : "#110101", }}>
+    <li key={id} style={{
+      ...staticStyling.listItem,
+      ...dyanamicStyling.bgClr,
+    }}>
 
-      <input type="checkbox" checked={todo.isChecked ? true : false} onChange={() => updateTodo(todo._id)} style={{ ...inlineStyles.checkbox }} />
+      <input
+        type="checkbox"
+        checked={todo.isChecked ? true : false}
+        onChange={() => updateTodo(todo._id)}
+        style={{ ...staticStyling.checkbox }}
+      />
 
-      <details open style={{ aspectRatio: "7/1", backgroundColor: todo.isChecked ? "antiquewhite" : "#110101", }}>
-        <summary style={{
-          ...inlineStyles.summary,
-          textDecoration: todo.isChecked ? "#110101 line-through" : "none",
-          color: todo.isChecked ? "#110101" : "antiquewhite",
-          backgroundColor: todo.isChecked ? "antiquewhite" : "#110101",
-        }}>
+      <details
+        open={todo.isChecked ? false : true}
+        style={{ aspectRatio: "7/1", ...dyanamicStyling.bgClr, }}>
+        <summary
+          style={{
+            ...staticStyling.summary,
+            ...dyanamicStyling.bgClr,
+            ...dyanamicStyling.textClr,
+            textDecoration: todo.isChecked ? "#110101 line-through" : "none",
+          }}>
           {todo.task}
         </summary>
 
-        <section style={{ ...inlineStyles.section, backgroundColor: todo.isChecked ? "antiquewhite" : "#110101", }}>
-          <p style={{ fontSize: "0.7em", color: todo.isChecked ? "#110101" : "antiquewhite", backgroundColor: todo.isChecked ? "antiquewhite" : "#110101", }}>Date: {new Date(todo.completeBy).toLocaleDateString()}</p>
-          <p style={{ fontSize: "0.7em", color: todo.isChecked ? "#110101" : "antiquewhite", backgroundColor: todo.isChecked ? "antiquewhite" : "#110101", }}>Time: {new Date(todo.completeBy).toLocaleTimeString()}</p>
+        <section
+          style={{
+            ...staticStyling.section,
+            ...dyanamicStyling.bgClr,
+          }}>
+          <p
+            style={{
+              fontSize: "0.7em",
+              ...dyanamicStyling.textClr,
+              ...dyanamicStyling.bgClr,
+            }}>
+            Date: {new Date(todo.completeBy).toLocaleDateString()}
+          </p>
+          <p
+            style={{
+              fontSize: "0.7em",
+              ...dyanamicStyling.textClr,
+              ...dyanamicStyling.bgClr,
+            }}>
+            Time: {new Date(todo.completeBy).toLocaleTimeString()}
+          </p>
         </section>
       </details>
 
-      {todo.isChecked ? <button style={{ ...inlineStyles.button, }} onClick={() => deleteTodo(todo._id)} >X</button> : null}
+      {
+        todo.isChecked
+          ? <button
+            style={{ ...staticStyling.button, }}
+            onClick={() => deleteTodo(todo._id)} >
+            X
+          </button>
+          : null
+      }
 
     </li>
   );
 };
 
-const inlineStyles = {
+const staticStyling = {
   listItem: {
     padding: "0.4em",
     margin: "0.2em 0.4em",
