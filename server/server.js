@@ -17,6 +17,7 @@ dbInit();
 app.use("/schedules", require("./mongoose/httpRequests/schedules"));
 app.use("/todos", require("./mongoose/httpRequests/todos"));
 app.use("/users", require("./mongoose/httpRequests/users"));
+app.use("/dailyTasks", require("./mongoose/httpRequests/dailyTasks"));
 
 app.get("/", (req, res) => {
   res.json({ message: "Server is Running!" });
