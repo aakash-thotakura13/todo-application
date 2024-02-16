@@ -21,12 +21,11 @@ router
       const documentCreated = await Todos.create(req.body);
       let ObjId = new mongoose.Types.ObjectId(documentCreated.id);
 
-      const updatedUser = await Users.findOneAndUpdate(
+      const updateUser = await Users.findOneAndUpdate(
         { _id: req.body.user },
         { $push: { todos: ObjId }, },
       );
-
-      res.status(200).send({ message: "Task ADDED SUCCESSFULLY", updatedUser });
+      res.status(200).send({ message: "Task ADDED SUCCESSFULLY", updateUser });
     } catch (err) {
       res.status(404).send(err);
     }
@@ -59,9 +58,8 @@ router
       const result = await Todos.findByIdAndDelete(req.params.id);
       res.status(200).json({ updateUser, result });
     } catch (err) {
-      res.status(404).send(err);
+      res.status(404).send("Error Deleting Task!", error)
     }
   });
-
 
 module.exports = router;
