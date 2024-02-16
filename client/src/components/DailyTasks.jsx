@@ -41,7 +41,31 @@ const EachItem = ({ ele, id }) => {
   )
 }
 
+const DailyTasksForm = () => {
+  const [task, setTask] = useState("");
+  const [option, setOption] = useState("");
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    const { name, value } = e.target;
+    console.log(name, value);
+  }
+
+  return (
+    <form method="post" onSubmit={handleSubmit} style={{ display: "grid", gridTemplateColumns: "1fr", padding: "0.3em", }}>
+      <input type="text" name="text" id="text" value={task} placeholder="Enter Your Task..." onChange={e => setTask(e.target.value)} style={{ padding: "0.5em", border: "0.2em solid #545453", borderRadius: "1em", margin: "0.5em", }} />
+      <select name="opion" id="option" style={{ padding: "0.4em", border: "0.2em solid #545453", borderRadius: "1em", margin: "0.5em", }}>
+        <option value="">Select </option>
+        <option value="">Daily Works</option>
+        <option value="">Expertise</option>
+      </select>
+      <button style={{ borderRadius: "1em", padding: "0.4em 0.8em", border: "0.2em solid #545454", cursor: "pointer", margin: "0.5em", }}>Add</button>
+    </form>
+  )
+}
+
 export const DailyTasks = () => {
+  const [displayForm, setDisplayForm] = useState(false);
 
   return (
     <section>
@@ -50,11 +74,27 @@ export const DailyTasks = () => {
       <h2 style={{ textAlign: "center", }}>Daily Tasks</h2>
 
       <Divider />
+      {
+        displayForm
+          ? <DailyTasksForm />
+          : <div style={{ display: "flex" }}>
+            <button
+              style={{ ...styles.displayFormButtonElement }}
+              onClick={() => setDisplayForm(!displayForm)}
+            >
+              Add
+            </button>
+          </div>
+
+      }
+
+
+      <Divider />
       <Heading title={"Daily~Works"} />
       <ul style={{ margin: "1em 0.1em", }}>
         {
           praticeTasks.map((ele, id) =>
-            <EachItem ele={ele} id={id} />
+            <EachItem key={id} ele={ele} id={id} />
           )
         }
       </ul>
@@ -64,7 +104,7 @@ export const DailyTasks = () => {
       <ul style={{ margin: "1em 0.1em", }}>
         {
           expertise.map((ele, id) =>
-            <EachItem ele={ele} id={id} />
+            <EachItem key={id} ele={ele} id={id} />
           )
         }
       </ul>
@@ -95,5 +135,13 @@ const styles = {
     margin: "0.2em auto",
     backgroundColor: "transparent",
     borderRadius: "2em",
+  },
+  displayFormButtonElement: {
+    width: "80%",
+    padding: "0.4em 0.8em",
+    margin: "auto",
+    border: "0.2em solid #545454",
+    borderRadius: "1em",
+    cursor: "pointer",
   },
 }

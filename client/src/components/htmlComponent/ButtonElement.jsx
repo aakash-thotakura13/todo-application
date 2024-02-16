@@ -8,6 +8,6 @@ const inlineStyle = {
     borderRadius: "1em",
     padding: "0.4em 0.8em",
     border: "0.2em solid #545454",
-    cursor:"pointer",
+    cursor: "pointer",
   }
 }
