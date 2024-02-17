@@ -32,7 +32,7 @@ const EachItem = ({ ele, id }) => {
         ...styles.liElement,
         backgroundColor: isDone && "antiquewhite",
         color: isDone && "#110101",
-        boxShadow: isDone ? "inset 0em 0em 0.2em 0.2em #110101" : "inset 0em 0em 0.2em 0.2em antiquewhite",
+        boxShadow: `inset 0em 0em 0.2em 0.2em ${isDone ? "#110101" : "antiquewhite"}`,
       }}
       onClick={() => setDone(!isDone)}
     >
@@ -47,17 +47,17 @@ const DailyTasksForm = () => {
 
   function handleSubmit(e) {
     e.preventDefault();
-    const { name, value } = e.target;
-    console.log(name, value);
+    const data = { task, option };
+    console.log(data);
   }
 
   return (
     <form method="post" onSubmit={handleSubmit} style={{ display: "grid", gridTemplateColumns: "1fr", padding: "0.3em", }}>
       <input type="text" name="text" id="text" value={task} placeholder="Enter Your Task..." onChange={e => setTask(e.target.value)} style={{ padding: "0.5em", border: "0.2em solid #545453", borderRadius: "1em", margin: "0.5em", }} />
-      <select name="opion" id="option" style={{ padding: "0.4em", border: "0.2em solid #545453", borderRadius: "1em", margin: "0.5em", }}>
+      <select name="opion" id="option" style={{ padding: "0.4em", border: "0.2em solid #545453", borderRadius: "1em", margin: "0.5em", }} value={option} onChange={e => setOption(e.target.value)}>
         <option value="">Select </option>
-        <option value="">Daily Works</option>
-        <option value="">Expertise</option>
+        <option value="dailyWorks">Daily Works</option>
+        <option value="expertise">Expertise</option>
       </select>
       <button style={{ borderRadius: "1em", padding: "0.4em 0.8em", border: "0.2em solid #545454", cursor: "pointer", margin: "0.5em", }}>Add</button>
     </form>
