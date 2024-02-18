@@ -39,22 +39,19 @@ export const TodoItem = ({ id, todo, deleteTodo, updateTodo }) => {
 
         <section
           style={{
-            ...staticStyling.section,
-            ...dyanamicStyling.bgClr,
+            ...staticStyling.section, ...dyanamicStyling.bgClr,
           }}>
           <p
             style={{
               fontSize: "0.7em",
-              ...dyanamicStyling.textClr,
-              ...dyanamicStyling.bgClr,
+              ...dyanamicStyling.textClr, ...dyanamicStyling.bgClr,
             }}>
             Date: {new Date(todo.completeBy).toLocaleDateString()}
           </p>
           <p
             style={{
               fontSize: "0.7em",
-              ...dyanamicStyling.textClr,
-              ...dyanamicStyling.bgClr,
+              ...dyanamicStyling.textClr, ...dyanamicStyling.bgClr,
             }}>
             Time: {new Date(todo.completeBy).toLocaleTimeString()}
           </p>

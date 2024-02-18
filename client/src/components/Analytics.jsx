@@ -21,7 +21,6 @@ export const Analytics = () => {
     }
   ];
 
-  console.log(Date())
 
   return (
     <section>
