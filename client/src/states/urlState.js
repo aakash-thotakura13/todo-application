@@ -44,6 +44,11 @@ export const schedulesURL = selector({
   },
 })
 
+export const dailyTasksURL = selector({
+  key:"dailyTasksURL",
+  get: ({get})=>{return get(baseURL) + "/dailyTasks";},
+})
+
 export const combinedURL = selector({
   key: "combinedURL",
   get: ({ get }) => {
