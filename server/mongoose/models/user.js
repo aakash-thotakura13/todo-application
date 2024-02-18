@@ -23,6 +23,7 @@ const userSchema = new mongoose.Schema({
   },
   todos: [{ type: mongoose.Schema.Types.ObjectId, ref: "Todo", }],
   schedules: [{ type: mongoose.Schema.Types.ObjectId, ref: "Schedule", }],
+  dailyTasks: [{ type: mongoose.Schema.Types.ObjectId, ref: "DailyTask", }],
 }, { collection: "users" }); // Explicitly specify the collection name
 
 module.exports = mongoose.model("User", userSchema);

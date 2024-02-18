@@ -6,6 +6,11 @@ const dailyTasksSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true,
+  },
+  section: {
+    type: String,
+    required: true,
+    trim: true,
   }
 }, { collection: "dailyTasks" });
 

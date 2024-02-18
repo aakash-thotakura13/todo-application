@@ -130,5 +130,24 @@ router
     }
   });
 
+  router
+  .route(`/dailyTasks/:id`)
+  .get(async (req, res) => {
+    try {
+      const user = await Users.findById(req.params.id).populate({ path: "dailyTasks" });
+      res.status(200).send(user);
+    } catch (error) {
+      res.status(404).send(`Error while fetching tasks \n ${error}`);
+    }
+  })
+  .delete(async (req, res) => {
+    try {
+      const response = await Users.findByIdAndDelete(req.params.id);
+      res.status(200).send("Deleted Successfully", response);
+    } catch (error) {
+      res.status(404).send("User not found for deletion \n ", error);
+    }
+  });
+
 
 module.exports = router
