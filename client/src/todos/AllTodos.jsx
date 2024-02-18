@@ -57,14 +57,25 @@ export const AllTodos = () => {
 
   useEffect(() => {
     getTasks(`${getUserUrl}/todos/${_userInfo._id}`, setAllTasks);
+    deletePreviousTasks();
   }, []);
+
+  const sevenDaysAgo = new Date(new Date() - 7 * 24 * 60 * 60 * 1000);
+
+  function deletePreviousTasks() {
+    const updateTask = allTasks
+      .filter(ele => {
+        if (ele.isChecked === true && new Date(ele.completeBy) < sevenDaysAgo) {
+          handleDeleteTodo(ele._id)
+        } else return ele
+      })
+    setAllTasks(updateTask)
+  }
 
   const updatedTasks = allTasks
     .filter(ele => {
       if (todaysTasks) {
-        return new Date(ele.completeBy).getDate() === new Date().getDate() &&
-          new Date(ele.completeBy).getMonth() === new Date().getMonth() &&
-          new Date(ele.completeBy).getFullYear() === new Date().getFullYear()
+        return new Date(ele.completeBy).getDate() === new Date().getDate() && new Date(ele.completeBy).getMonth() === new Date().getMonth() && new Date(ele.completeBy).getFullYear() === new Date().getFullYear()
       } else if (previousTasks) {
         return new Date(ele.completeBy) < new Date()
       } else {
@@ -123,7 +134,6 @@ export const AllTodos = () => {
       console.error("Error updating todo", error);
     }
   };
-
 
   return (
     <>

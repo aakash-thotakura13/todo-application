@@ -57,7 +57,21 @@ export const AllSchedules = () => {
 
   useEffect(() => {
     getTasks(`${getUserUrl}/schedules/${_userInfo._id}`, setAllTasks);
+    deletePreviousTasks();
   }, []);
+
+
+  const sevenDaysAgo = new Date(new Date() - 7 * 24 * 60 * 60 * 1000);
+
+  function deletePreviousTasks() {
+    const updateTask = allTasks
+      .filter(ele => {
+        if (ele.isChecked === true && new Date(ele.completeBy) < sevenDaysAgo) {
+          handleDeleteTodo(ele._id)
+        } else return ele
+      })
+    setAllTasks(updateTask)
+  }
 
   const updatedTasks = allTasks
     .filter(ele => {
@@ -222,7 +236,7 @@ const styles = {
     margin: "auto",
     border: "0.2em solid #545454",
     borderRadius: "1em",
-    cursor:"pointer",
+    cursor: "pointer",
   },
   sortSection: {
     padding: "0.5em 0em",
