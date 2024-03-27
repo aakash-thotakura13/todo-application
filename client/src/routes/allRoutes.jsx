@@ -5,8 +5,8 @@ import { createBrowserRouter } from "react-router-dom";
 import { userInfo } from "../states/userState";
 
 import App from "../App";
-import { AllTodos } from "../todos/AllTodos";
-import { AllSchedules } from "../schedules/AllSchedules";
+import { AllTodos } from "../components/todos/AllTodos";
+import { AllSchedules } from "../components/schedules/AllSchedules";
 import { Login } from "../components/Login";
 import { SignUp } from "../components/SignUp";
 import { Analytics } from "../components/Analytics";
