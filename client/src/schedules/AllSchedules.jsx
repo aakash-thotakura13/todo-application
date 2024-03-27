@@ -103,6 +103,7 @@ export const AllSchedules = () => {
   const handleSubmit = async (newPost) => {
     const data = { ...newPost, user: _userInfo._id, };
     try {
+      setAllTasks([...allTasks, data]);
       await axios.post(schedulesUrl, data);
       getTasks(`${getUserUrl}/schedules/${_userInfo._id}`, setAllTasks);
     } catch (error) {
@@ -117,6 +118,7 @@ export const AllSchedules = () => {
       user_id: _userInfo._id,
     }
     try {
+      setAllTasks(allTasks.filter(ele => ele._id !== id));
       await axios.delete(`${schedulesUrl}/${id}`, { data: reqData });
       getTasks(`${getUserUrl}/schedules/${_userInfo._id}`, setAllTasks);
     } catch (error) {
@@ -131,6 +133,7 @@ export const AllSchedules = () => {
         ...specificTodo.data,
         isChecked: !specificTodo.data.isChecked,
       };
+      setAllTasks(allTasks.map(ele => ele._id === id ? updatedData : ele));
       await axios.put(`${schedulesUrl}/${id}`, updatedData);
       getTasks(`${getUserUrl}/schedules/${_userInfo._id}`, setAllTasks);
     } catch (error) {

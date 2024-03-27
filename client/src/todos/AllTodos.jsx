@@ -100,6 +100,7 @@ export const AllTodos = () => {
   const handleSubmit = async (newPost) => {
     const data = { ...newPost, user: _userInfo._id, };
     try {
+      setAllTasks([...allTasks, data]);
       await axios.post(todosUrl, data);
       getTasks(`${getUserUrl}/todos/${_userInfo._id}`, setAllTasks);
     } catch (error) {
@@ -114,6 +115,7 @@ export const AllTodos = () => {
       user_id: _userInfo._id,
     }
     try {
+      setAllTasks(allTasks.filter(ele => ele._id !== id));
       await axios.delete(`${todosUrl}/${id}`, { data: reqData });
       getTasks(`${getUserUrl}/todos/${_userInfo._id}`, setAllTasks);
     } catch (error) {
@@ -128,6 +130,7 @@ export const AllTodos = () => {
         ...specificTodo.data,
         isChecked: !specificTodo.data.isChecked,
       };
+      setAllTasks(allTasks.map(ele => ele._id === id ? updatedData : ele));
       await axios.put(`${todosUrl}/${id}`, updatedData);
       getTasks(`${getUserUrl}/todos/${_userInfo._id}`, setAllTasks);
     } catch (error) {

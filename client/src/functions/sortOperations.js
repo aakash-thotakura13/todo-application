@@ -4,7 +4,7 @@ export const sortingFunction = async (
   sort, setSort, setTasks,
   url, updatedUrl
 ) => {
-  const arrayName = url.split("/")[4]
+  const arrayName = url.split("/")[4];
   try {
     setSort(!sort);
     const updated = sort ? url : updatedUrl;
