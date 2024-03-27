@@ -9,15 +9,15 @@ import { userInfo } from "../../states/userState";
 import { AnalysisComponent } from "../AnalysisComponent";
 
 import { ButtonElement } from "../htmlComponent/ButtonElement";
-import { Divider } from "../htmlComponent/DividerComponent";
 import { InputElement } from "../htmlComponent/InputElement";
 import { SortButton } from "../htmlComponent/SortButtonElement";
+import { Divider } from "../htmlComponent/DividerComponent";
 
 import { getTasks } from "../../functions/apiOperations";
+import { sortingFunction } from "../../functions/sortOperations";
 
 import { TodoList } from "../TodoList";
 
-import { sortingFunction } from "../../functions/sortOperations";
 
 
 const TodoForm = ({ handleSubmit }) => {
