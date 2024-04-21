@@ -70,7 +70,7 @@ export const AllTodos = () => {
           handleDeleteTodo(ele._id)
         } else return ele
       })
-    setAllTasks(updateTask)
+    setAllTasks(updateTask);
   }
 
   const updatedTasks = allTasks
@@ -103,7 +103,7 @@ export const AllTodos = () => {
     try {
       setAllTasks([...allTasks, data]);
       await axios.post(todosUrl, data);
-      getTasks(`${getUserUrl}/todos/${_userInfo._id}`, setAllTasks);
+      await getTasks(`${getUserUrl}/todos/${_userInfo._id}`, setAllTasks);
     } catch (error) {
       console.error("Error posting todo", error);
     }
@@ -118,7 +118,7 @@ export const AllTodos = () => {
     try {
       setAllTasks(allTasks.filter(ele => ele._id !== id));
       await axios.delete(`${todosUrl}/${id}`, { data: reqData });
-      getTasks(`${getUserUrl}/todos/${_userInfo._id}`, setAllTasks);
+      await getTasks(`${getUserUrl}/todos/${_userInfo._id}`, setAllTasks);
     } catch (error) {
       console.error("Error deleting todo", error);
     }
@@ -133,7 +133,7 @@ export const AllTodos = () => {
       };
       setAllTasks(allTasks.map(ele => ele._id === id ? updatedData : ele));
       await axios.put(`${todosUrl}/${id}`, updatedData);
-      getTasks(`${getUserUrl}/todos/${_userInfo._id}`, setAllTasks);
+      await getTasks(`${getUserUrl}/todos/${_userInfo._id}`, setAllTasks);
     } catch (error) {
       console.error("Error updating todo", error);
     }
