@@ -13,11 +13,11 @@ export const getTasks = async (url, setTasks) => {
           : setTasks(data);
       })
       .catch(error => {
-        console.log("Error Fetching Data", error);
+        console.error("Error Fetching Data", error);
         setTasks([]);
       })
   } catch (error) {
-    console.log("Error Fetching Data", error);
+    console.error("Error Fetching Data", error);
     setTasks([]);
   }
 };

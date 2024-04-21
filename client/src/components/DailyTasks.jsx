@@ -116,8 +116,6 @@ export const DailyTasks = () => {
     }
   }
 
-  console.log(allTasks);
-
   return (
     <section>
 

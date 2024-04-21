@@ -13,8 +13,8 @@ export const sortingFunction = async (
         let data = result.data[arrayName];
         setTasks(data);
       })
-      .catch(error => console.log(error))
+      .catch(error => console.error(error))
   } catch (error) {
-    console.log("Error Sorting Based 'on date':", error);
+    console.error("Error Sorting Based 'on date':", error);
   }
 }
