@@ -1,24 +1,50 @@
 import { MongoClient, type ObjectId } from "mongodb";
+import type { Place } from "./place";
 import type { User } from "./users";
 
 export type TaskStatus = "pending" | "complete";
+export type TaskKind = "once" | "repeating";
+export type Priority = "low" | "medium" | "high";
 
-// Every task is one step in a chain. The first step's _id is the chainId.
-// Tasks created before chains existed have no chainId/parentId/step;
-// they're treated as step 1 of their own chain.
+export const PRIORITIES: Priority[] = ["high", "medium", "low"];
+
+// A task is either:
+//  - "once": a dated task. Each one is a step in a chain; the first step's
+//    _id is the chainId. Every step has its own date.
+//  - "repeating": shows up every day (or on chosen weekdays). Its daily
+//    ticks are stored in the separate `completions` collection.
+// Older tasks may lack kind/priority/dueDate; they're treated as
+// one-time, medium priority, dated on the day they were created.
 export type Task = {
   _id: ObjectId;
-  chainId?: ObjectId; // _id of the first step in this chain
-  parentId?: ObjectId | null; // the step this one follows (null for the first step)
-  step?: number; // 1, 2, 3, …
+  kind?: TaskKind;
+  priority?: Priority;
+  dueDate?: string; // once: "YYYY-MM-DD" (IST)
+  days?: number[]; // repeating: 0 = Sun … 6 = Sat
+  place?: Place | null; // where the task is done (optional)
+
+  chainId?: ObjectId; // once: _id of the first step in this chain
+  parentId?: ObjectId | null; // once: the step this one follows
+  step?: number; // once: 1, 2, 3, …
+
   text: string;
-  status: TaskStatus;
+  status: TaskStatus; // once only; repeating tasks use completions
   note?: string | null; // "how it was done", written when completing
   createdBy: User;
   createdAt: Date;
   completedBy?: User | null;
   completedAt?: Date | null;
   updatedAt?: Date;
+};
+
+/** One tick of a repeating task on one day. */
+export type Completion = {
+  _id: ObjectId;
+  taskId: ObjectId;
+  date: string; // "YYYY-MM-DD" (IST)
+  completedBy: User;
+  completedAt: Date;
+  note?: string | null;
 };
 
 // Reuse one client across hot reloads in dev and across requests in prod.
@@ -35,8 +61,14 @@ function getClient() {
   return globalThis._mongoClient;
 }
 
+function db() {
+  return getClient().db(process.env.MONGODB_DB ?? "todo");
+}
+
 export function tasksCollection() {
-  return getClient()
-    .db(process.env.MONGODB_DB ?? "todo")
-    .collection<Task>("tasks");
+  return db().collection<Task>("tasks");
+}
+
+export function completionsCollection() {
+  return db().collection<Completion>("completions");
 }

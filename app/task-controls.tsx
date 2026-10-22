@@ -1,49 +1,84 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
   addNextStep,
   completeAndAddNext,
+  completeRepeating,
   completeStep,
-  deleteChain,
   removeStep,
   reopenStep,
+  undoRepeating,
 } from "./actions";
-
-const inputClass =
-  "w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:text-zinc-100";
-
-function SubmitButton({ children }: { children: ReactNode }) {
-  const { pending } = useFormStatus();
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-    >
-      {pending ? "Saving…" : children}
-    </button>
-  );
-}
-
-function CancelButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded-lg px-3 py-1.5 text-sm text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-    >
-      Cancel
-    </button>
-  );
-}
+import { PlacePicker } from "./place-picker";
+import { CancelButton, dateInputClass, inputClass, SubmitButton } from "./ui";
 
 function focusNewTask() {
   const input = document.getElementById("new-task");
   input?.scrollIntoView({ behavior: "smooth", block: "center" });
   input?.focus();
 }
+
+function Circle({
+  done,
+  label,
+  onClick,
+}: {
+  done: boolean;
+  label: string;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={done || !onClick}
+      onClick={onClick}
+      aria-label={label}
+      className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border text-xs ${
+        done
+          ? "border-blue-600 bg-blue-600 text-white"
+          : "border-zinc-400 hover:border-blue-600"
+      }`}
+    >
+      {done && "✓"}
+    </button>
+  );
+}
+
+function StepText({
+  text,
+  meta,
+  done,
+  note,
+  prominent,
+}: {
+  text: string;
+  meta: string;
+  done: boolean;
+  note: string | null;
+  prominent: boolean;
+}) {
+  return (
+    <div className="min-w-0 flex-1">
+      <p
+        className={`${prominent ? "font-semibold" : ""} ${
+          done ? "text-zinc-500 line-through" : "text-zinc-900 dark:text-zinc-100"
+        }`}
+      >
+        {text}
+      </p>
+      <p className="mt-0.5 text-xs text-zinc-400">{meta}</p>
+      {done && note && (
+        <p className="mt-2 rounded-md bg-zinc-50 p-2 text-sm whitespace-pre-wrap text-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-300">
+          {note}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ---------- One-time task: the current step of a chain ---------- */
 
 type CurrentStepProps = {
   id: string;
@@ -53,6 +88,7 @@ type CurrentStepProps = {
   note: string | null;
   canRemove: boolean; // false for the first step of a chain
   prominent: boolean; // true when this step is also the card's heading
+  today: string;
 };
 
 type Mode = "idle" | "completing" | "adding";
@@ -65,49 +101,31 @@ export function CurrentStep({
   note,
   canRemove,
   prominent,
+  today,
 }: CurrentStepProps) {
   const [mode, setMode] = useState<Mode>("idle");
 
   return (
     <div>
       <div className="flex items-start gap-3">
-        <button
-          type="button"
-          disabled={done}
+        <Circle
+          done={done}
+          label={done ? "Completed" : `Complete "${text}"`}
           onClick={() => setMode(mode === "completing" ? "idle" : "completing")}
-          aria-label={done ? "Completed" : `Complete "${text}"`}
-          className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border text-xs ${
-            done
-              ? "border-blue-600 bg-blue-600 text-white"
-              : "border-zinc-400 hover:border-blue-600"
-          }`}
-        >
-          {done && "✓"}
-        </button>
-
-        <div className="min-w-0 flex-1">
-          <p
-            className={`${prominent ? "font-semibold" : ""} ${
-              done ? "text-zinc-500 line-through" : "text-zinc-900 dark:text-zinc-100"
-            }`}
-          >
-            {text}
-          </p>
-          <p className="mt-0.5 text-xs text-zinc-400">{meta}</p>
-          {done && note && (
-            <p className="mt-2 rounded-md bg-zinc-50 p-2 text-sm whitespace-pre-wrap text-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-300">
-              {note}
-            </p>
-          )}
-        </div>
+        />
+        <StepText text={text} meta={meta} done={done} note={note} prominent={prominent} />
       </div>
 
-      {/* Completing: type a note (✓) or the next task (Add Task) */}
       {mode === "completing" && !done && (
-        <CompleteBox id={id} initialNote={note ?? ""} onClose={() => setMode("idle")} />
+        <CompleteBox
+          initialNote={note ?? ""}
+          today={today}
+          onComplete={(formData) => completeStep(id, formData)}
+          onAddTask={(formData) => completeAndAddNext(id, formData)}
+          onClose={() => setMode("idle")}
+        />
       )}
 
-      {/* Completed: what's next? */}
       {done && mode === "idle" && (
         <div className="mt-3 ml-8 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
           <button
@@ -138,7 +156,7 @@ export function CurrentStep({
             await addNextStep(id, formData);
             setMode("idle");
           }}
-          className="mt-3 ml-8 flex gap-2"
+          className="mt-3 ml-8 space-y-2"
         >
           <input
             name="text"
@@ -148,8 +166,19 @@ export function CurrentStep({
             placeholder="Next step, e.g. Apply client changes"
             className={inputClass}
           />
-          <SubmitButton>Add</SubmitButton>
-          <CancelButton onClick={() => setMode("idle")} />
+          <PlacePicker />
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="date"
+              name="dueDate"
+              required
+              defaultValue={today}
+              aria-label="Date for the next step"
+              className={dateInputClass}
+            />
+            <SubmitButton>Add</SubmitButton>
+            <CancelButton onClick={() => setMode("idle")} />
+          </div>
         </form>
       )}
 
@@ -170,22 +199,75 @@ export function CurrentStep({
   );
 }
 
-function CompleteBox({
+/* ---------- Repeating task: today's tick ---------- */
+
+export function RepeatingStep({
   id,
-  initialNote,
-  onClose,
+  text,
+  meta,
+  done,
+  note,
 }: {
   id: string;
+  text: string;
+  meta: string;
+  done: boolean;
+  note: string | null;
+}) {
+  const [completing, setCompleting] = useState(false);
+
+  return (
+    <div>
+      <div className="flex items-start gap-3">
+        <Circle
+          done={done}
+          label={done ? "Done today" : `Tick "${text}" for today`}
+          onClick={() => setCompleting(!completing)}
+        />
+        <StepText text={text} meta={meta} done={done} note={note} prominent />
+      </div>
+
+      {completing && !done && (
+        <CompleteBox
+          initialNote=""
+          onComplete={(formData) => completeRepeating(id, formData)}
+          onClose={() => setCompleting(false)}
+        />
+      )}
+
+      {done && (
+        <form action={undoRepeating.bind(null, id)} className="mt-2 ml-8">
+          <button type="submit" className="text-xs text-zinc-400 hover:underline">
+            Undo today&apos;s tick
+          </button>
+        </form>
+      )}
+    </div>
+  );
+}
+
+/* ---------- The box that opens when you tap the circle ---------- */
+
+function CompleteBox({
+  initialNote,
+  today,
+  onComplete,
+  onAddTask,
+  onClose,
+}: {
   initialNote: string;
+  today?: string;
+  onComplete: (formData: FormData) => Promise<void>;
+  onAddTask?: (formData: FormData) => Promise<void>;
   onClose: () => void;
 }) {
   const [entry, setEntry] = useState(initialNote);
 
   return (
     <form
-      // Pressing ✓ (or Ctrl+Enter) completes the step with the entry as its note.
+      // ✓ (or Ctrl+Enter) completes with the entry as a note.
       action={async (formData) => {
-        await completeStep(id, formData);
+        await onComplete(formData);
         onClose();
       }}
       className="mt-3 ml-8 space-y-2"
@@ -201,16 +283,28 @@ function CompleteBox({
           if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) e.currentTarget.form?.requestSubmit();
         }}
         autoFocus
-        aria-label="Note or next task"
-        placeholder="Write how it was done (✓), or type the next task (Add Task)…"
+        aria-label={onAddTask ? "Note or next task" : "Note"}
+        placeholder={
+          onAddTask
+            ? "Write how it was done (✓), or type the next task (Add Task)…"
+            : "How did it go today? (optional)"
+        }
         className={inputClass}
       />
+      {onAddTask && entry.trim() && (
+        // Only relevant for "Add Task": where the next task happens.
+        <PlacePicker placeholder="📍 Place for the next task (optional)" />
+      )}
       <CompleteBoxButtons
         canAddTask={entry.trim().length > 0}
-        onAddTask={async (formData) => {
-          await completeAndAddNext(id, formData);
-          onClose();
-        }}
+        today={today}
+        onAddTask={
+          onAddTask &&
+          (async (formData) => {
+            await onAddTask(formData);
+            onClose();
+          })
+        }
         onClose={onClose}
       />
     </form>
@@ -219,28 +313,42 @@ function CompleteBox({
 
 function CompleteBoxButtons({
   canAddTask,
+  today,
   onAddTask,
   onClose,
 }: {
   canAddTask: boolean;
-  onAddTask: (formData: FormData) => Promise<void>;
+  today?: string;
+  onAddTask?: (formData: FormData) => Promise<void>;
   onClose: () => void;
 }) {
   const { pending } = useFormStatus();
   const iconButton =
-    "flex size-8 items-center justify-center rounded-lg text-base disabled:opacity-50";
+    "flex size-8 shrink-0 items-center justify-center rounded-lg text-base disabled:opacity-50";
 
   return (
-    <div className="flex items-center gap-2">
-      <button
-        type="submit"
-        formAction={onAddTask}
-        disabled={pending || !canAddTask}
-        title="Complete this step and add the entry as the next task"
-        className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-      >
-        Add Task
-      </button>
+    <div className="flex flex-wrap items-center gap-2">
+      {onAddTask && (
+        <>
+          <input
+            type="date"
+            name="dueDate"
+            defaultValue={today}
+            aria-label="Date for the next task"
+            title="Date for the next task"
+            className={dateInputClass}
+          />
+          <button
+            type="submit"
+            formAction={onAddTask}
+            disabled={pending || !canAddTask}
+            title="Complete this step and add the entry as the next task"
+            className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            Add Task
+          </button>
+        </>
+      )}
       <button
         type="submit"
         disabled={pending}
@@ -265,28 +373,26 @@ function CompleteBoxButtons({
   );
 }
 
-export function DeleteChainButton({
-  chainId,
-  title,
-  stepCount,
-}: {
-  chainId: string;
-  title: string;
-  stepCount: number;
-}) {
-  const message =
-    stepCount > 1
-      ? `Delete "${title}" and all ${stepCount} steps? This can't be undone.`
-      : `Delete "${title}"? This can't be undone.`;
+/* ---------- Delete with confirmation ---------- */
 
+export function DeleteButton({
+  action,
+  label,
+  message,
+}: {
+  action: () => Promise<void>;
+  label: string;
+  message: string;
+}) {
   return (
-    <form action={deleteChain.bind(null, chainId)}>
+    <form action={action}>
       <button
         type="submit"
         onClick={(e) => {
           if (!confirm(message)) e.preventDefault();
         }}
-        aria-label={`Delete "${title}"`}
+        aria-label={label}
+        title={label}
         className="rounded px-2 text-zinc-400 hover:text-red-600"
       >
         ✕

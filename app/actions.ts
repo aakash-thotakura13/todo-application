@@ -3,7 +3,24 @@
 import { ObjectId } from "mongodb";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { tasksCollection, type Task } from "@/lib/db";
+import {
+  completionsCollection,
+  PRIORITIES,
+  tasksCollection,
+  type Priority,
+  type Task,
+} from "@/lib/db";
+import { isValidDate, normalizeDays, todayIST } from "@/lib/dates";
+import { MapsError, optimizedRoundTrip } from "@/lib/google";
+import {
+  isLatLng,
+  parsePlace,
+  TRAVEL_MODES,
+  type LatLng,
+  type Place,
+  type PlanRouteResult,
+  type TravelMode,
+} from "@/lib/place";
 import { deleteSession, requireUser } from "@/lib/session";
 
 const MAX_TEXT = 500;
@@ -12,6 +29,10 @@ const MAX_NOTE = 5000;
 function readText(value: FormDataEntryValue | null, max: number) {
   const text = typeof value === "string" ? value.trim() : "";
   return text.slice(0, max);
+}
+
+function readPriority(value: FormDataEntryValue | null, fallback: Priority = "medium") {
+  return PRIORITIES.includes(value as Priority) ? (value as Priority) : fallback;
 }
 
 function chainIdOf(task: Task) {
@@ -32,35 +53,89 @@ async function isLatestStep(task: Task) {
   return next === null;
 }
 
-/** Start a brand-new chain. */
-export async function createTask(formData: FormData) {
-  const user = await requireUser();
-  const text = readText(formData.get("text"), MAX_TEXT);
-  if (!text) return;
-
-  const _id = new ObjectId();
+/** Insert the step that follows `parent` in its chain. */
+async function insertNextStep(
+  parent: Task,
+  text: string,
+  dueDate: string,
+  place: Place | null,
+  user: Task["createdBy"],
+) {
   const now = new Date();
   await tasksCollection().insertOne({
-    _id,
-    chainId: _id,
-    parentId: null,
-    step: 1,
+    _id: new ObjectId(),
+    kind: "once",
+    priority: parent.priority ?? "medium",
+    dueDate,
+    place,
+    chainId: chainIdOf(parent),
+    parentId: parent._id,
+    step: (parent.step ?? 1) + 1,
     text,
     status: "pending",
     createdBy: user,
     createdAt: now,
     updatedAt: now,
   });
-  revalidatePath("/");
-  // Redirect after saving, so refreshing the page can never re-submit the form.
-  redirect("/");
 }
+
+/** Create a new one-time (dated) or repeating task. */
+export async function createTask(formData: FormData) {
+  const user = await requireUser();
+  const text = readText(formData.get("text"), MAX_TEXT);
+  if (!text) return;
+
+  const priority = readPriority(formData.get("priority"));
+  const place = parsePlace(formData.get("place"));
+  const _id = new ObjectId();
+  const now = new Date();
+
+  if (formData.get("kind") === "repeating") {
+    const days = normalizeDays(
+      formData.getAll("days").map(Number).filter(Number.isInteger),
+    );
+    await tasksCollection().insertOne({
+      _id,
+      kind: "repeating",
+      priority,
+      days,
+      place,
+      text,
+      status: "pending",
+      createdBy: user,
+      createdAt: now,
+      updatedAt: now,
+    });
+  } else {
+    const dueDate = formData.get("dueDate");
+    if (!isValidDate(dueDate)) return; // a date is required for one-time tasks
+    await tasksCollection().insertOne({
+      _id,
+      kind: "once",
+      priority,
+      dueDate,
+      place,
+      chainId: _id,
+      parentId: null,
+      step: 1,
+      text,
+      status: "pending",
+      createdBy: user,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  revalidatePath("/");
+}
+
+/* ---------- One-time tasks (chains) ---------- */
 
 /** Mark a step complete, with an optional note on how it was done. */
 export async function completeStep(id: string, formData: FormData) {
   const user = await requireUser();
   const task = await findTask(id);
-  if (!task || task.status === "complete") return;
+  if (!task || task.kind === "repeating" || task.status === "complete") return;
 
   const note = readText(formData.get("note"), MAX_NOTE);
   const now = new Date();
@@ -83,10 +158,11 @@ export async function completeStep(id: string, formData: FormData) {
 export async function completeAndAddNext(id: string, formData: FormData) {
   const user = await requireUser();
   const text = readText(formData.get("note"), MAX_TEXT);
-  if (!text) return;
+  const dueDate = formData.get("dueDate");
+  if (!text || !isValidDate(dueDate)) return;
 
   const task = await findTask(id);
-  if (!task || task.status === "complete") return;
+  if (!task || task.kind === "repeating" || task.status === "complete") return;
   if (!(await isLatestStep(task))) return;
 
   const now = new Date();
@@ -101,17 +177,22 @@ export async function completeAndAddNext(id: string, formData: FormData) {
       },
     },
   );
-  await tasksCollection().insertOne({
-    _id: new ObjectId(),
-    chainId: chainIdOf(task),
-    parentId: task._id,
-    step: (task.step ?? 1) + 1,
-    text,
-    status: "pending",
-    createdBy: user,
-    createdAt: now,
-    updatedAt: now,
-  });
+  await insertNextStep(task, text, dueDate, parsePlace(formData.get("place")), user);
+  revalidatePath("/");
+}
+
+/** Add the next step after a completed one. */
+export async function addNextStep(parentId: string, formData: FormData) {
+  const user = await requireUser();
+  const text = readText(formData.get("text"), MAX_TEXT);
+  const dueDate = formData.get("dueDate");
+  if (!text || !isValidDate(dueDate)) return;
+
+  const parent = await findTask(parentId);
+  if (!parent || parent.kind === "repeating" || parent.status !== "complete") return;
+  if (!(await isLatestStep(parent))) return;
+
+  await insertNextStep(parent, text, dueDate, parsePlace(formData.get("place")), user);
   revalidatePath("/");
 }
 
@@ -136,31 +217,6 @@ export async function reopenStep(id: string) {
   revalidatePath("/");
 }
 
-/** Add the next step after a completed one. */
-export async function addNextStep(parentId: string, formData: FormData) {
-  const user = await requireUser();
-  const text = readText(formData.get("text"), MAX_TEXT);
-  if (!text) return;
-
-  const parent = await findTask(parentId);
-  if (!parent || parent.status !== "complete") return;
-  if (!(await isLatestStep(parent))) return;
-
-  const now = new Date();
-  await tasksCollection().insertOne({
-    _id: new ObjectId(),
-    chainId: chainIdOf(parent),
-    parentId: parent._id,
-    step: (parent.step ?? 1) + 1,
-    text,
-    status: "pending",
-    createdBy: user,
-    createdAt: now,
-    updatedAt: now,
-  });
-  revalidatePath("/");
-}
-
 /** Remove the newest step (not the first one — delete the whole chain instead). */
 export async function removeStep(id: string) {
   await requireUser();
@@ -180,6 +236,112 @@ export async function deleteChain(chainId: string) {
   const _id = new ObjectId(chainId);
   await tasksCollection().deleteMany({ $or: [{ _id }, { chainId: _id }] });
   revalidatePath("/");
+}
+
+/* ---------- Repeating tasks ---------- */
+
+/** Tick a repeating task for today, with an optional note. */
+export async function completeRepeating(id: string, formData: FormData) {
+  const user = await requireUser();
+  const task = await findTask(id);
+  if (!task || task.kind !== "repeating") return;
+
+  const note = readText(formData.get("note"), MAX_NOTE);
+  await completionsCollection().updateOne(
+    { taskId: task._id, date: todayIST() },
+    { $set: { completedBy: user, completedAt: new Date(), note: note || null } },
+    { upsert: true },
+  );
+  revalidatePath("/");
+}
+
+/** Untick a repeating task for today. */
+export async function undoRepeating(id: string) {
+  await requireUser();
+  if (!ObjectId.isValid(id)) return;
+
+  await completionsCollection().deleteOne({
+    taskId: new ObjectId(id),
+    date: todayIST(),
+  });
+  revalidatePath("/");
+}
+
+/** Delete a repeating task and its whole daily log. */
+export async function deleteRepeating(id: string) {
+  await requireUser();
+  if (!ObjectId.isValid(id)) return;
+
+  const _id = new ObjectId(id);
+  await tasksCollection().deleteOne({ _id, kind: "repeating" });
+  await completionsCollection().deleteMany({ taskId: _id });
+  revalidatePath("/");
+}
+
+/* ---------- Places & route planning ---------- */
+
+/** Set, change or (with an empty value) remove the place on a task. */
+export async function setTaskPlace(id: string, formData: FormData) {
+  await requireUser();
+  if (!ObjectId.isValid(id)) return;
+
+  await tasksCollection().updateOne(
+    { _id: new ObjectId(id) },
+    { $set: { place: parsePlace(formData.get("place")), updatedAt: new Date() } },
+  );
+  revalidatePath("/");
+}
+
+const MAX_STOPS = 25; // Google's limit for stops in one route
+
+/** Find the best order to visit the given tasks' places, starting and ending at `origin`. */
+export async function planRoute(input: {
+  origin: LatLng;
+  taskIds: string[];
+  mode: TravelMode;
+}): Promise<PlanRouteResult> {
+  await requireUser();
+
+  const { origin, mode } = input;
+  if (!isLatLng(origin)) return { ok: false, error: "Invalid starting point." };
+  if (!TRAVEL_MODES.includes(mode)) return { ok: false, error: "Invalid travel mode." };
+
+  const ids = [...new Set(input.taskIds)].filter((id) => ObjectId.isValid(id));
+  if (ids.length === 0) return { ok: false, error: "Pick at least one task." };
+  if (ids.length > MAX_STOPS) {
+    return { ok: false, error: `Google can plan up to ${MAX_STOPS} stops at a time.` };
+  }
+
+  const tasks = await tasksCollection()
+    .find({ _id: { $in: ids.map((id) => new ObjectId(id)) } })
+    .toArray();
+  const stops = ids.flatMap((id) => {
+    const task = tasks.find((t) => t._id.toString() === id);
+    return task?.place ? [{ id, place: task.place }] : [];
+  });
+  if (stops.length === 0) return { ok: false, error: "None of these tasks have a place." };
+
+  try {
+    const route = await optimizedRoundTrip(
+      origin,
+      stops.map((s) => ({ lat: s.place.lat, lng: s.place.lng })),
+      mode,
+    );
+    return {
+      ok: true,
+      order: route.order.map((i) => stops[i].id),
+      legs: route.legs,
+      totalDistanceMeters: route.totalDistanceMeters,
+      totalDurationSeconds: route.totalDurationSeconds,
+    };
+  } catch (error) {
+    if (!(error instanceof MapsError)) console.error(error);
+    return {
+      ok: false,
+      error:
+        error instanceof MapsError ? error.message : "Couldn't plan the route. Please try again.",
+    };
+  }
 }
 
 export async function logout() {
