@@ -2,7 +2,8 @@
 
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { setTaskPlace } from "./actions";
-import { CancelButton, inputClass, SubmitButton } from "./ui";
+import { useInstant } from "./instant";
+import { CancelButton, inputClass } from "./ui";
 import { placeLink, type Place } from "@/lib/place";
 
 type Suggestion = { placeId: string; name: string; secondary: string };
@@ -194,62 +195,79 @@ export function PlaceEditor({
 }) {
   const [editing, setEditing] = useState(false);
   const [picked, setPicked] = useState<Place | null>(null);
+  const { value: shown, isPending, run } = useInstant(place);
   const margin = indent ? "ml-8" : "";
+
+  function save(next: Place | null) {
+    const formData = new FormData();
+    formData.set("place", next ? JSON.stringify(next) : "");
+    setEditing(false);
+    run(next, () => setTaskPlace(taskId, formData));
+  }
 
   if (editing) {
     return (
-      <form
-        action={async (formData) => {
-          await setTaskPlace(taskId, formData);
-          setEditing(false);
-        }}
-        className={`mt-2 space-y-2 ${margin}`}
-      >
+      <div className={`mt-2 space-y-2 ${margin}`}>
         <PlacePicker autoFocus placeholder="Search Google Maps…" onChange={setPicked} />
         <div className="flex gap-2">
-          <SubmitButton disabled={!picked}>Save place</SubmitButton>
+          <button
+            type="button"
+            disabled={!picked}
+            onClick={() => save(picked)}
+            className="shrink-0 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            Save place
+          </button>
           <CancelButton onClick={() => setEditing(false)} />
         </div>
-      </form>
+      </div>
     );
   }
 
   return (
     <div className={`mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ${margin}`}>
-      {place ? (
+      {shown ? (
         <>
           <a
-            href={placeLink(place)}
+            href={placeLink(shown)}
             target="_blank"
             rel="noreferrer"
-            title={place.address}
+            title={shown.address}
             className="text-zinc-600 hover:underline dark:text-zinc-400"
           >
-            📍 {place.name}
+            📍 {shown.name}
           </a>
           <button
             type="button"
-            onClick={() => setEditing(true)}
+            onClick={() => {
+              setPicked(null);
+              setEditing(true);
+            }}
             className="text-zinc-400 hover:underline"
           >
             Change
           </button>
-          <form action={setTaskPlace.bind(null, taskId)}>
-            <input type="hidden" name="place" value="" />
-            <button type="submit" className="text-zinc-400 hover:text-red-600">
-              Remove
-            </button>
-          </form>
+          <button
+            type="button"
+            onClick={() => save(null)}
+            className="text-zinc-400 hover:text-red-600"
+          >
+            Remove
+          </button>
         </>
       ) : (
         <button
           type="button"
-          onClick={() => setEditing(true)}
+          onClick={() => {
+            setPicked(null);
+            setEditing(true);
+          }}
           className="text-zinc-400 hover:text-blue-600"
         >
           📍 Add place
         </button>
       )}
+      {isPending && <span className="animate-pulse text-blue-500">saving…</span>}
     </div>
   );
 }

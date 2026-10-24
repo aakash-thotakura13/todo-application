@@ -1,9 +1,13 @@
 import { Suspense, type ReactNode } from "react";
 import { deleteChain, deleteRepeating, logout } from "./actions";
-import { NewTaskForm } from "./new-task-form";
+import { Card } from "./instant";
+import { BoardProvider, NewTaskButton, Panel, SavingList } from "./board-shell";
+import { NewTaskDialog } from "./new-task-form";
 import { PlaceEditor } from "./place-picker";
 import { RoutePlanner, type RouteStop } from "./route-planner";
+import { SectionMenu, type MenuItem } from "./section-menu";
 import { CurrentStep, DeleteButton, RepeatingStep } from "./task-controls";
+import { percent, repeatStats, WINDOW, type DayState, type RepeatStats } from "@/lib/stats";
 import { placeLink, type Place } from "@/lib/place";
 import {
   completionsCollection,
@@ -23,8 +27,6 @@ import {
 } from "@/lib/dates";
 import { requireUser } from "@/lib/session";
 import { DISPLAY_NAMES, type User } from "@/lib/users";
-
-const HISTORY_DAYS = 30;
 
 const PRIORITY_RANK: Record<Priority, number> = { high: 0, medium: 1, low: 2 };
 
@@ -93,7 +95,8 @@ function groupIntoChains(tasks: Task[]): Chain[] {
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-zinc-100 px-4 py-12 dark:bg-zinc-950">
+    // Extra bottom padding so the menu bubble never covers the last card.
+    <main className="min-h-screen bg-zinc-100 px-4 pt-12 pb-28 dark:bg-zinc-950">
       <div className="mx-auto max-w-2xl rounded-xl bg-white p-6 shadow-sm dark:bg-zinc-900">
         {/* The board reads cookies, the clock and the database, so it renders per request. */}
         <Suspense fallback={<BoardSkeleton />}>
@@ -115,13 +118,11 @@ async function Board() {
 
   const [tasks, completions] = await Promise.all([
     tasksCollection().find().toArray(),
-    completionsCollection()
-      .find({ date: { $gte: addDays(today, -HISTORY_DAYS) } })
-      .sort({ date: -1 })
-      .toArray(),
+    // All ticks, for the done/missed analysis.
+    completionsCollection().find().sort({ date: -1 }).toArray(),
   ]);
 
-  // Daily log per repeating task, newest first.
+  // Ticks per repeating task, newest first.
   const logByTask = new Map<string, Completion[]>();
   for (const c of completions) {
     const key = c.taskId.toString();
@@ -130,11 +131,28 @@ async function Board() {
   const doneToday = (task: Task) =>
     logByTask.get(task._id.toString())?.find((c) => c.date === today) ?? null;
 
-  const repeating = tasks.filter((t) => t.kind === "repeating");
+  const repeating = tasks
+    .filter((t) => t.kind === "repeating")
+    .sort(
+      (a, b) =>
+        PRIORITY_RANK[priorityOf(a)] - PRIORITY_RANK[priorityOf(b)] ||
+        a.createdAt.getTime() - b.createdAt.getTime(),
+    );
   const chains = groupIntoChains(tasks.filter((t) => t.kind !== "repeating"));
 
+  const statsByTask = new Map<string, RepeatStats>(
+    repeating.map((t) => [
+      t._id.toString(),
+      repeatStats({
+        days: normalizeDays(t.days),
+        startDate: dateOf(t.createdAt),
+        completions: logByTask.get(t._id.toString()) ?? [],
+        today,
+      }),
+    ]),
+  );
+
   const repeatingToday = repeating.filter((t) => normalizeDays(t.days).includes(weekday));
-  const repeatingOtherDays = repeating.filter((t) => !normalizeDays(t.days).includes(weekday));
 
   const pendingChains = chains.filter((c) => c.current.status === "pending");
   const completedChains = chains
@@ -194,120 +212,142 @@ async function Board() {
         PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority],
     );
 
-  const repeatingCard = (task: Task) => (
-    <RepeatingCard
-      key={task._id.toString()}
-      task={task}
-      today={today}
-      todayCompletion={doneToday(task)}
-      log={logByTask.get(task._id.toString()) ?? []}
-    />
-  );
   const chainCard = (chain: Chain) => (
     <ChainCard key={chain.id} chain={chain} today={today} />
   );
 
+  const menu: MenuItem[] = [
+    { id: "today", label: "Today", icon: "☀️", count: todayLeft },
+    { id: "upcoming", label: "Upcoming", icon: "📅", count: upcoming.length },
+    { id: "repeating", label: "Repeating", icon: "↻", count: repeating.length },
+    { id: "completed", label: "Completed", icon: "✓", count: completedChains.length },
+  ];
+
   return (
-    <>
-      <header className="mb-6 flex items-center justify-between">
+    <BoardProvider>
+      <header className="mb-6 flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
             Tasks
           </h1>
-          <p className="text-sm text-zinc-500">{formatDay(today)}</p>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-sm text-zinc-500">
+            <span>{formatDay(today)}</span>
+            <span aria-hidden>·</span>
+            <span>{DISPLAY_NAMES[user]}</span>
+            <span aria-hidden>·</span>
+            <form action={logout}>
+              <button type="submit" className="text-zinc-500 hover:text-blue-600 hover:underline">
+                Log out
+              </button>
+            </form>
+          </div>
         </div>
-        <div className="flex items-center gap-3 text-sm text-zinc-500">
-          <span>Hi, {DISPLAY_NAMES[user]}</span>
-          <form action={logout}>
-            <button type="submit" className="text-blue-600 hover:underline">
-              Log out
-            </button>
-          </form>
-        </div>
+        <NewTaskButton />
       </header>
 
-      <NewTaskForm today={today} />
+      <SavingList />
 
-      <Section
-        title={`Today · ${todayLeft} left`}
-        empty={todayItems.length === 0 ? "Nothing for today. Enjoy!" : null}
-        toolbar={
-          todayLeft > 0 ? <RoutePlanner stops={routeStops} missingPlaces={missingPlaces} /> : null
-        }
-      >
-        {todayItems.map((item) =>
-          item.type === "chain" ? chainCard(item.chain) : repeatingCard(item.task),
-        )}
-      </Section>
-
-      <Section
-        title={`Upcoming (${upcoming.length})`}
-        empty={upcoming.length === 0 ? "Nothing planned ahead." : null}
-      >
-        {upcoming.map(chainCard)}
-      </Section>
-
-      {repeatingOtherDays.length > 0 && (
-        <Section title={`Repeating · not today (${repeatingOtherDays.length})`} collapsible>
-          {repeatingOtherDays.map(repeatingCard)}
+      <Panel id="today">
+        <Section
+          title="Today"
+          count={todayLeft === 0 ? "All done" : `${todayLeft} left`}
+          empty={todayItems.length === 0 ? "Nothing for today. Enjoy!" : null}
+          toolbar={
+            todayLeft > 0 ? <RoutePlanner stops={routeStops} missingPlaces={missingPlaces} /> : null
+          }
+        >
+          {todayItems.map((item) => {
+            if (item.type === "chain") return chainCard(item.chain);
+            const id = item.task._id.toString();
+            return (
+              <TodayRepeatingCard
+                key={id}
+                task={item.task}
+                todayCompletion={doneToday(item.task)}
+                streak={statsByTask.get(id)?.currentStreak ?? 0}
+              />
+            );
+          })}
         </Section>
-      )}
+      </Panel>
 
-      <Section
-        title={`Completed (${completedChains.length})`}
-        empty={completedChains.length === 0 ? "No completed tasks yet." : null}
-        collapsible
-      >
-        {completedChains.map(chainCard)}
-      </Section>
-    </>
+      <Panel id="upcoming">
+        <Section
+          title="Upcoming"
+          count={String(upcoming.length)}
+          empty={upcoming.length === 0 ? "Nothing planned ahead." : null}
+        >
+          {upcoming.map(chainCard)}
+        </Section>
+      </Panel>
+
+      <Panel id="repeating">
+        <Section
+          title="Repeating"
+          count={String(repeating.length)}
+          empty={repeating.length === 0 ? "No repeating tasks yet." : null}
+          toolbar={
+            repeating.length > 0 ? (
+              <RepeatingOverview stats={[...statsByTask.values()]} today={today} />
+            ) : null
+          }
+        >
+          {repeating.map((task) => {
+            const id = task._id.toString();
+            return (
+              <RepeatingStatsCard
+                key={id}
+                task={task}
+                today={today}
+                stats={statsByTask.get(id)!}
+                log={(logByTask.get(id) ?? []).filter((c) => c.date > addDays(today, -WINDOW))}
+              />
+            );
+          })}
+        </Section>
+      </Panel>
+
+      <Panel id="completed">
+        <Section
+          title="Completed"
+          count={String(completedChains.length)}
+          empty={completedChains.length === 0 ? "No completed tasks yet." : null}
+        >
+          {completedChains.map(chainCard)}
+        </Section>
+      </Panel>
+
+      <SectionMenu items={menu} />
+      <NewTaskDialog today={today} />
+    </BoardProvider>
   );
 }
 
 function Section({
   title,
+  count,
   empty = null,
-  collapsible = false,
   toolbar = null,
   children,
 }: {
   title: string;
+  count: string;
   empty?: string | null;
-  collapsible?: boolean;
   toolbar?: ReactNode;
   children: ReactNode;
 }) {
-  const heading = (
-    <h2 className="text-xs font-semibold tracking-wide text-zinc-500 uppercase">{title}</h2>
-  );
-  const body = (
-    <>
+  return (
+    <section>
+      <div className="flex items-baseline gap-2">
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{title}</h2>
+        <span className="text-sm text-zinc-400">{count}</span>
+      </div>
       {toolbar}
       {empty ? (
-        <p className="py-3 text-sm text-zinc-400">{empty}</p>
+        <p className="py-10 text-center text-sm text-zinc-400">{empty}</p>
       ) : (
-        <ul className="mt-3 space-y-3">{children}</ul>
+        <ul className="mt-4 space-y-3">{children}</ul>
       )}
-    </>
-  );
-
-  if (collapsible) {
-    return (
-      <details className="group mb-8 last:mb-0">
-        <summary className="cursor-pointer list-none select-none">
-          <span className="flex items-center gap-1.5">
-            <span className="text-xs text-zinc-400 transition-transform group-open:rotate-90">▶</span>
-            {heading}
-          </span>
-        </summary>
-        {body}
-      </details>
-    );
-  }
-  return (
-    <section className="mb-8 last:mb-0">
-      {heading}
-      {body}
     </section>
   );
 }
@@ -397,7 +437,7 @@ function ChainCard({ chain, today }: { chain: Chain; today: string }) {
   );
 
   return (
-    <li className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+    <Card className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
         <PriorityBadge priority={chain.priority} />
         {!done && <DueBadge date={chain.dueDate} today={today} />}
@@ -470,71 +510,227 @@ function ChainCard({ chain, today }: { chain: Chain; today: string }) {
           </ol>
         </details>
       )}
-    </li>
+    </Card>
   );
 }
 
-/* ---------- Repeating task card ---------- */
+/* ---------- Repeating tasks ---------- */
 
-function RepeatingCard({
+const PEOPLE: User[] = ["ish", "ishah"];
+
+function scheduleBadge(task: Task) {
+  return (
+    <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-400">
+      ↻ {scheduleLabel(task.days)}
+    </Badge>
+  );
+}
+
+/** In the Today list: just today's tick. */
+function TodayRepeatingCard({
   task,
-  today,
   todayCompletion,
-  log,
+  streak,
 }: {
   task: Task;
-  today: string;
   todayCompletion: Completion | null;
-  log: Completion[]; // newest first, last 30 days
+  streak: number;
 }) {
   const id = task._id.toString();
-  const scheduledToday = normalizeDays(task.days).includes(weekdayOf(today));
-  const done = todayCompletion !== null;
-
   const meta = todayCompletion
     ? `Done today by ${name(todayCompletion.completedBy)}`
     : `Added by ${name(task.createdBy)}`;
 
   return (
-    <li className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+    <Card className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
         <PriorityBadge priority={priorityOf(task)} />
-        <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-400">
-          ↻ {scheduleLabel(task.days)}
-        </Badge>
+        {scheduleBadge(task)}
+        {streak >= 2 && (
+          <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400">
+            🔥 {streak}-day streak
+          </Badge>
+        )}
+      </div>
+      <RepeatingStep
+        id={id}
+        text={task.text}
+        meta={meta}
+        done={todayCompletion !== null}
+        note={todayCompletion?.note ?? null}
+      />
+      <PlaceEditor taskId={id} place={task.place ?? null} />
+    </Card>
+  );
+}
+
+function rateText(t: { done: number; due: number }) {
+  const p = percent(t);
+  return p === null ? "—" : `${p}%`;
+}
+
+/** Summary tiles at the top of the Repeating section. */
+function RepeatingOverview({ stats, today }: { stats: RepeatStats[]; today: string }) {
+  const sum = (pick: (s: RepeatStats) => { done: number; due: number }) =>
+    stats.reduce(
+      (t, s) => ({ done: t.done + pick(s).done, due: t.due + pick(s).due }),
+      { done: 0, due: 0 },
+    );
+
+  const todayCells = stats.map((s) => s.strip[s.strip.length - 1]).filter((d) => d.date === today);
+  const todayTotal = todayCells.filter((d) => d.state !== "off").length;
+  const todayDone = todayCells.filter((d) => d.state === "done").length;
+  const week = sum((s) => s.week);
+  const month = sum((s) => s.window);
+
+  const tiles = [
+    { label: "Today", value: `${todayDone}/${todayTotal}`, sub: "done so far" },
+    { label: "Last 7 days", value: rateText(week), sub: `${week.done} of ${week.due} done` },
+    { label: `Last ${WINDOW} days`, value: rateText(month), sub: `${month.done} of ${month.due} done` },
+  ];
+
+  return (
+    <div className="mt-3 grid grid-cols-3 gap-2">
+      {tiles.map((t) => (
+        <div key={t.label} className="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800/60">
+          <p className="text-[11px] font-medium text-zinc-500">{t.label}</p>
+          <p className="mt-0.5 text-xl font-semibold text-zinc-900 tabular-nums dark:text-zinc-100">
+            {t.value}
+          </p>
+          <p className="text-[11px] text-zinc-400">{t.sub}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const CELL_STYLES: Record<DayState, string> = {
+  done: "bg-green-500",
+  missed: "bg-red-400 dark:bg-red-500/80",
+  pending: "bg-transparent ring-1 ring-inset ring-blue-500",
+  off: "bg-zinc-100 dark:bg-zinc-800",
+};
+const CELL_LABEL: Record<DayState, string> = {
+  done: "done",
+  missed: "missed",
+  pending: "not done yet",
+  off: "not scheduled",
+};
+
+/** In the Repeating section: the full done/missed record for one task. */
+function RepeatingStatsCard({
+  task,
+  today,
+  stats,
+  log,
+}: {
+  task: Task;
+  today: string;
+  stats: RepeatStats;
+  log: Completion[]; // newest first, within the window
+}) {
+  const id = task._id.toString();
+  const missed = stats.window.due - stats.window.done;
+
+  return (
+    <Card className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+      <div className="mb-2 flex flex-wrap items-center gap-1.5">
+        <PriorityBadge priority={priorityOf(task)} />
+        {scheduleBadge(task)}
       </div>
 
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
-          {scheduledToday ? (
-            <RepeatingStep
-              key={`${id}-${today}`}
-              id={id}
-              text={task.text}
-              meta={meta}
-              done={done}
-              note={todayCompletion?.note ?? null}
-            />
-          ) : (
-            <>
-              <p className="font-semibold text-zinc-900 dark:text-zinc-100">{task.text}</p>
-              <p className="mt-0.5 text-xs text-zinc-400">Not scheduled today</p>
-            </>
-          )}
-          <PlaceEditor taskId={id} place={task.place ?? null} indent={scheduledToday} />
+          <p className="font-semibold text-zinc-900 dark:text-zinc-100">{task.text}</p>
+          <p className="mt-0.5 text-xs text-zinc-400">
+            Since {formatDay(dateOf(task.createdAt))} · added by {name(task.createdBy)}
+            {stats.lastDone && ` · last done ${stats.lastDone === today ? "today" : formatDay(stats.lastDone)}`}
+          </p>
+          <PlaceEditor taskId={id} place={task.place ?? null} indent={false} />
         </div>
         <DeleteButton
           action={deleteRepeating.bind(null, id)}
           label={`Delete "${task.text}"`}
-          message={`Delete the repeating task "${task.text}" and its daily log? This can't be undone.`}
+          message={`Delete the repeating task "${task.text}" and all its history? This can't be undone.`}
         />
       </div>
 
+      {/* Numbers */}
+      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-4">
+        <div>
+          <dt className="text-[11px] text-zinc-500">Last {WINDOW} days</dt>
+          <dd className="font-semibold text-zinc-900 tabular-nums dark:text-zinc-100">
+            {rateText(stats.window)}{" "}
+            <span className="text-xs font-normal text-zinc-400">
+              {stats.window.done}/{stats.window.due}
+            </span>
+          </dd>
+        </div>
+        <div>
+          <dt className="text-[11px] text-zinc-500">Missed</dt>
+          <dd
+            className={`font-semibold tabular-nums ${missed > 0 ? "text-red-600" : "text-zinc-900 dark:text-zinc-100"}`}
+          >
+            {missed} {missed === 1 ? "day" : "days"}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-[11px] text-zinc-500">Streak</dt>
+          <dd className="font-semibold text-zinc-900 tabular-nums dark:text-zinc-100">
+            {stats.currentStreak}{" "}
+            <span className="text-xs font-normal text-zinc-400">best {stats.bestStreak}</span>
+          </dd>
+        </div>
+        <div>
+          <dt className="text-[11px] text-zinc-500">All time</dt>
+          <dd className="font-semibold text-zinc-900 tabular-nums dark:text-zinc-100">
+            {rateText(stats.allTime)}{" "}
+            <span className="text-xs font-normal text-zinc-400">
+              {stats.allTime.done}/{stats.allTime.due}
+            </span>
+          </dd>
+        </div>
+      </dl>
+
+      {/* Last 30 days, one square per day */}
+      <div className="mt-4">
+        <div
+          className="grid max-w-md gap-[3px]"
+          style={{ gridTemplateColumns: `repeat(${stats.strip.length}, minmax(0, 1fr))` }}
+          role="img"
+          aria-label={`Last ${WINDOW} days: ${stats.window.done} done, ${missed} missed`}
+        >
+          {stats.strip.map((d) => (
+            <span
+              key={d.date}
+              title={`${formatDay(d.date)}: ${CELL_LABEL[d.state]}${d.by ? ` by ${name(d.by)}` : ""}`}
+              className={`aspect-square rounded-[3px] ${CELL_STYLES[d.state]}`}
+            />
+          ))}
+        </div>
+        <div className="mt-1.5 flex max-w-md items-center justify-between text-[10px] text-zinc-400">
+          <span>{formatDay(stats.strip[0].date)}</span>
+          <span className="flex items-center gap-2">
+            <Legend state="done" /> <Legend state="missed" /> <Legend state="off" />
+          </span>
+          <span>Today</span>
+        </div>
+      </div>
+
+      {/* Who did it */}
+      {Object.keys(stats.byUser).length > 0 && (
+        <p className="mt-3 text-xs text-zinc-500">
+          Done by:{" "}
+          {PEOPLE.filter((p) => stats.byUser[p])
+            .map((p) => `${name(p)} ${stats.byUser[p]}×`)
+            .join(" · ")}
+        </p>
+      )}
+
       {log.length > 0 && (
-        <details className="mt-4">
+        <details className="mt-3">
           <summary className="cursor-pointer text-xs font-medium text-zinc-500 select-none hover:text-zinc-700 dark:hover:text-zinc-300">
-            Daily log · done {log.length} {log.length === 1 ? "time" : "times"} in the last{" "}
-            {HISTORY_DAYS} days
+            Daily log · last {WINDOW} days
           </summary>
           <ol className="mt-3 space-y-3 border-l border-zinc-200 pl-4 dark:border-zinc-800">
             {log.map((c) => (
@@ -549,7 +745,16 @@ function RepeatingCard({
           </ol>
         </details>
       )}
-    </li>
+    </Card>
+  );
+}
+
+function Legend({ state }: { state: DayState }) {
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span className={`inline-block size-2 rounded-[2px] ${CELL_STYLES[state]}`} />
+      {state === "off" ? "off" : CELL_LABEL[state]}
+    </span>
   );
 }
 
