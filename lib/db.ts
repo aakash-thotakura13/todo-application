@@ -1,6 +1,6 @@
 import { MongoClient, type ObjectId } from "mongodb";
 import type { Place } from "./place";
-import type { User } from "./users";
+import type { Assignee, User } from "./users";
 
 export type TaskStatus = "pending" | "complete";
 export type TaskKind = "once" | "repeating";
@@ -21,6 +21,7 @@ export type Task = {
   priority?: Priority;
   dueDate?: string; // once: "YYYY-MM-DD" (IST)
   days?: number[]; // repeating: 0 = Sun … 6 = Sat
+  assignee?: Assignee; // repeating: who does it (older tasks: "either")
   place?: Place | null; // where the task is done (optional)
 
   chainId?: ObjectId; // once: _id of the first step in this chain
@@ -37,7 +38,11 @@ export type Task = {
   updatedAt?: Date;
 };
 
-/** One tick of a repeating task on one day. */
+export function assigneeOf(task: Task): Assignee {
+  return task.assignee ?? "either";
+}
+
+/** One person's tick of a repeating task on one day. */
 export type Completion = {
   _id: ObjectId;
   taskId: ObjectId;

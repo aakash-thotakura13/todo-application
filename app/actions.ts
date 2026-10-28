@@ -4,6 +4,7 @@ import { ObjectId } from "mongodb";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
+  assigneeOf,
   completionsCollection,
   PRIORITIES,
   tasksCollection,
@@ -22,6 +23,7 @@ import {
   type TravelMode,
 } from "@/lib/place";
 import { deleteSession, requireUser } from "@/lib/session";
+import { isAssignee, isFor } from "@/lib/users";
 
 const MAX_TEXT = 500;
 const MAX_NOTE = 5000;
@@ -94,11 +96,13 @@ export async function createTask(formData: FormData) {
     const days = normalizeDays(
       formData.getAll("days").map(Number).filter(Number.isInteger),
     );
+    const who = formData.get("assignee");
     await tasksCollection().insertOne({
       _id,
       kind: "repeating",
       priority,
       days,
+      assignee: isAssignee(who) ? who : "each",
       place,
       text,
       status: "pending",
@@ -240,30 +244,58 @@ export async function deleteChain(chainId: string) {
 
 /* ---------- Repeating tasks ---------- */
 
-/** Tick a repeating task for today, with an optional note. */
+/**
+ * Tick a repeating task for today, with an optional note.
+ * "Each of us" / "Only …" tasks: every person has their own tick.
+ * "Either of us" tasks: the first tick of the day counts for both.
+ */
 export async function completeRepeating(id: string, formData: FormData) {
   const user = await requireUser();
   const task = await findTask(id);
   if (!task || task.kind !== "repeating") return;
 
+  const assignee = assigneeOf(task);
+  if (!isFor(assignee, user)) return; // someone else's personal task
+
+  const date = todayIST();
+  if (assignee === "either") {
+    const already = await completionsCollection().findOne({ taskId: task._id, date });
+    if (already) return;
+  }
+
   const note = readText(formData.get("note"), MAX_NOTE);
   await completionsCollection().updateOne(
-    { taskId: task._id, date: todayIST() },
-    { $set: { completedBy: user, completedAt: new Date(), note: note || null } },
+    { taskId: task._id, date, completedBy: user },
+    { $set: { completedAt: new Date(), note: note || null } },
     { upsert: true },
   );
   revalidatePath("/");
 }
 
-/** Untick a repeating task for today. */
+/** Untick a repeating task for today (your own tick; for "Either of us", today's tick). */
 export async function undoRepeating(id: string) {
-  await requireUser();
-  if (!ObjectId.isValid(id)) return;
+  const user = await requireUser();
+  const task = await findTask(id);
+  if (!task || task.kind !== "repeating") return;
 
-  await completionsCollection().deleteOne({
-    taskId: new ObjectId(id),
-    date: todayIST(),
-  });
+  const date = todayIST();
+  await completionsCollection().deleteMany(
+    assigneeOf(task) === "either"
+      ? { taskId: task._id, date }
+      : { taskId: task._id, date, completedBy: user },
+  );
+  revalidatePath("/");
+}
+
+/** Change who a repeating task is for. Past ticks are kept and re-scored. */
+export async function setAssignee(id: string, assignee: string) {
+  await requireUser();
+  if (!ObjectId.isValid(id) || !isAssignee(assignee)) return;
+
+  await tasksCollection().updateOne(
+    { _id: new ObjectId(id), kind: "repeating" },
+    { $set: { assignee, updatedAt: new Date() } },
+  );
   revalidatePath("/");
 }
 

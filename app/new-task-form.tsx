@@ -5,6 +5,7 @@ import { useBoard, type SectionId } from "./board-shell";
 import { PlacePicker } from "./place-picker";
 import { addDays, ALL_DAYS, DAY_SHORT, formatDay, weekdayOf, WEEKDAYS } from "@/lib/dates";
 import type { Priority } from "@/lib/db";
+import { DISPLAY_NAMES, isFor, otherUser, type Assignee, type User } from "@/lib/users";
 
 type Kind = "once" | "repeating";
 
@@ -29,7 +30,7 @@ const pillOff =
 const pillOn = "bg-blue-600 text-white";
 
 /** The "New task" pop-up: a bottom sheet on phones, a centred card on larger screens. */
-export function NewTaskDialog({ today }: { today: string }) {
+export function NewTaskDialog({ today, me }: { today: string; me: User }) {
   const { composing, setComposing, addTask } = useBoard();
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const [formKey, setFormKey] = useState(0);
@@ -60,6 +61,7 @@ export function NewTaskDialog({ today }: { today: string }) {
       <NewTaskForm
         key={formKey}
         today={today}
+        me={me}
         onCancel={() => setComposing(false)}
         onSubmit={(formData, text, lands) => {
           setComposing(false);
@@ -72,10 +74,12 @@ export function NewTaskDialog({ today }: { today: string }) {
 
 function NewTaskForm({
   today,
+  me,
   onCancel,
   onSubmit,
 }: {
   today: string;
+  me: User;
   onCancel: () => void;
   onSubmit: (formData: FormData, text: string, lands: SectionId) => void;
 }) {
@@ -85,6 +89,14 @@ function NewTaskForm({
   const [dueDate, setDueDate] = useState(today);
   const [days, setDays] = useState<number[]>(ALL_DAYS);
   const [priority, setPriority] = useState<Priority>("medium");
+  const [assignee, setAssignee] = useState<Assignee>("each");
+
+  const whoOptions: { value: Assignee; icon: string; label: string; hint: string }[] = [
+    { value: "each", icon: "👥", label: "Each of us", hint: "both tick their own" },
+    { value: "either", icon: "🤝", label: "Either of us", hint: "one tick is enough" },
+    { value: me, icon: "👤", label: "Only me", hint: DISPLAY_NAMES[me] },
+    { value: otherUser(me), icon: "👤", label: `Only ${DISPLAY_NAMES[otherUser(me)]}`, hint: "just them" },
+  ];
 
   const sameDays = (preset: number[]) => days.join() === preset.join();
   const toggleDay = (day: number) =>
@@ -103,7 +115,7 @@ function NewTaskForm({
       ? dueDate <= today
         ? "today"
         : "upcoming"
-      : days.includes(weekdayOf(today))
+      : days.includes(weekdayOf(today)) && isFor(assignee, me)
         ? "today"
         : "repeating";
 
@@ -269,6 +281,41 @@ function NewTaskForm({
             {days.length === 0 && (
               <p className="mt-2 text-xs text-red-600">Pick at least one day.</p>
             )}
+          </div>
+        )}
+
+        {/* Who (repeating only) */}
+        {kind === "repeating" && (
+          <div>
+            <Label>Who does it</Label>
+            <input type="hidden" name="assignee" value={assignee} />
+            <div className="grid grid-cols-2 gap-2">
+              {whoOptions.map((o) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  onClick={() => setAssignee(o.value)}
+                  aria-pressed={assignee === o.value}
+                  className={`flex items-center gap-2 rounded-xl px-3 py-2 text-left transition active:scale-95 ${
+                    assignee === o.value ? pillOn : pillOff
+                  }`}
+                >
+                  <span aria-hidden className="text-base">
+                    {o.icon}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium">{o.label}</span>
+                    <span
+                      className={`block truncate text-[11px] ${
+                        assignee === o.value ? "text-white/80" : "text-zinc-500"
+                      }`}
+                    >
+                      {o.hint}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 

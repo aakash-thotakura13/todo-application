@@ -5,11 +5,13 @@ import { BoardProvider, NewTaskButton, Panel, SavingList } from "./board-shell";
 import { NewTaskDialog } from "./new-task-form";
 import { PlaceEditor } from "./place-picker";
 import { RoutePlanner, type RouteStop } from "./route-planner";
+import { AssigneeSwitcher } from "./assignee-switcher";
 import { SectionMenu, type MenuItem } from "./section-menu";
 import { CurrentStep, DeleteButton, RepeatingStep } from "./task-controls";
 import { percent, repeatStats, WINDOW, type DayState, type RepeatStats } from "@/lib/stats";
 import { placeLink, type Place } from "@/lib/place";
 import {
+  assigneeOf,
   completionsCollection,
   tasksCollection,
   type Completion,
@@ -26,7 +28,14 @@ import {
   weekdayOf,
 } from "@/lib/dates";
 import { requireUser } from "@/lib/session";
-import { DISPLAY_NAMES, type User } from "@/lib/users";
+import {
+  assigneeLabel,
+  DISPLAY_NAMES,
+  isFor,
+  otherUser,
+  participants,
+  type User,
+} from "@/lib/users";
 
 const PRIORITY_RANK: Record<Priority, number> = { high: 0, medium: 1, low: 2 };
 
@@ -128,8 +137,15 @@ async function Board() {
     const key = c.taskId.toString();
     logByTask.set(key, [...(logByTask.get(key) ?? []), c]);
   }
-  const doneToday = (task: Task) =>
-    logByTask.get(task._id.toString())?.find((c) => c.date === today) ?? null;
+  const todaysTicks = (task: Task) =>
+    (logByTask.get(task._id.toString()) ?? []).filter((c) => c.date === today);
+  // Your tick today ("Either of us" tasks: anyone's tick counts).
+  const myTickToday = (task: Task) => {
+    const ticks = todaysTicks(task);
+    return assigneeOf(task) === "either"
+      ? (ticks[0] ?? null)
+      : (ticks.find((c) => c.completedBy === user) ?? null);
+  };
 
   const repeating = tasks
     .filter((t) => t.kind === "repeating")
@@ -140,19 +156,20 @@ async function Board() {
     );
   const chains = groupIntoChains(tasks.filter((t) => t.kind !== "repeating"));
 
-  const statsByTask = new Map<string, RepeatStats>(
+  // Done/missed records: one per person, or one shared record for "Either of us".
+  const statsByTask = new Map<string, StatsEntry[]>(
     repeating.map((t) => [
       t._id.toString(),
-      repeatStats({
-        days: normalizeDays(t.days),
-        startDate: dateOf(t.createdAt),
-        completions: logByTask.get(t._id.toString()) ?? [],
-        today,
-      }),
+      statsEntries(t, logByTask.get(t._id.toString()) ?? [], today),
     ]),
   );
+  const myStats = (task: Task) =>
+    statsByTask.get(task._id.toString())?.find((e) => e.who === null || e.who === user)?.stats;
 
-  const repeatingToday = repeating.filter((t) => normalizeDays(t.days).includes(weekday));
+  // Your repeating tasks for today (not the other person's personal ones).
+  const repeatingToday = repeating.filter(
+    (t) => normalizeDays(t.days).includes(weekday) && isFor(assigneeOf(t), user),
+  );
 
   const pendingChains = chains.filter((c) => c.current.status === "pending");
   const completedChains = chains
@@ -165,7 +182,7 @@ async function Board() {
     ...repeatingToday.map((task) => ({
       type: "repeating" as const,
       task,
-      done: doneToday(task) !== null,
+      done: myTickToday(task) !== null,
     })),
     ...pendingChains
       .filter((c) => c.dueDate <= today)
@@ -263,8 +280,16 @@ async function Board() {
               <TodayRepeatingCard
                 key={id}
                 task={item.task}
-                todayCompletion={doneToday(item.task)}
-                streak={statsByTask.get(id)?.currentStreak ?? 0}
+                myTick={myTickToday(item.task)}
+                partner={
+                  assigneeOf(item.task) === "each"
+                    ? {
+                        name: DISPLAY_NAMES[otherUser(user)],
+                        done: todaysTicks(item.task).some((c) => c.completedBy === otherUser(user)),
+                      }
+                    : null
+                }
+                streak={myStats(item.task)?.currentStreak ?? 0}
               />
             );
           })}
@@ -288,7 +313,11 @@ async function Board() {
           empty={repeating.length === 0 ? "No repeating tasks yet." : null}
           toolbar={
             repeating.length > 0 ? (
-              <RepeatingOverview stats={[...statsByTask.values()]} today={today} />
+              <RepeatingOverview
+                entries={[...statsByTask.values()].flat()}
+                todayDone={repeatingToday.filter((t) => myTickToday(t) !== null).length}
+                todayTotal={repeatingToday.length}
+              />
             ) : null
           }
         >
@@ -299,7 +328,8 @@ async function Board() {
                 key={id}
                 task={task}
                 today={today}
-                stats={statsByTask.get(id)!}
+                me={user}
+                entries={statsByTask.get(id) ?? []}
                 log={(logByTask.get(id) ?? []).filter((c) => c.date > addDays(today, -WINDOW))}
               />
             );
@@ -318,7 +348,7 @@ async function Board() {
       </Panel>
 
       <SectionMenu items={menu} />
-      <NewTaskDialog today={today} />
+      <NewTaskDialog today={today} me={user} />
     </BoardProvider>
   );
 }
@@ -516,7 +546,33 @@ function ChainCard({ chain, today }: { chain: Chain; today: string }) {
 
 /* ---------- Repeating tasks ---------- */
 
-const PEOPLE: User[] = ["ish", "ishah"];
+/** One done/missed record: a person's own (`who`), or shared for "Either of us" (null). */
+type StatsEntry = { who: User | null; stats: RepeatStats };
+
+function statsEntries(task: Task, ticks: Completion[], today: string): StatsEntry[] {
+  const record = (list: Completion[]) =>
+    repeatStats({
+      days: normalizeDays(task.days),
+      startDate: dateOf(task.createdAt),
+      completions: list,
+      today,
+    });
+  const people = participants(assigneeOf(task));
+  if (people === null) return [{ who: null, stats: record(ticks) }];
+  return people.map((who) => ({ who, stats: record(ticks.filter((c) => c.completedBy === who)) }));
+}
+
+const ASSIGNEE_ICON = { each: "👥", either: "🤝", personal: "👤" } as const;
+
+function assigneeBadge(task: Task) {
+  const a = assigneeOf(task);
+  const icon = a === "each" || a === "either" ? ASSIGNEE_ICON[a] : ASSIGNEE_ICON.personal;
+  return (
+    <Badge className="bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-400">
+      {icon} {assigneeLabel(a)}
+    </Badge>
+  );
+}
 
 function scheduleBadge(task: Task) {
   return (
@@ -526,26 +582,34 @@ function scheduleBadge(task: Task) {
   );
 }
 
-/** In the Today list: just today's tick. */
+/** In the Today list: your tick for today (and how the other person is doing). */
 function TodayRepeatingCard({
   task,
-  todayCompletion,
+  myTick,
+  partner,
   streak,
 }: {
   task: Task;
-  todayCompletion: Completion | null;
+  myTick: Completion | null;
+  partner: { name: string; done: boolean } | null; // "Each of us" tasks only
   streak: number;
 }) {
   const id = task._id.toString();
-  const meta = todayCompletion
-    ? `Done today by ${name(todayCompletion.completedBy)}`
-    : `Added by ${name(task.createdBy)}`;
+  const shared = assigneeOf(task) === "either";
+  const meta = myTick
+    ? shared
+      ? `Done today by ${name(myTick.completedBy)}`
+      : "You've done it today"
+    : partner
+      ? "Your tick for today"
+      : `Added by ${name(task.createdBy)}`;
 
   return (
     <Card className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
         <PriorityBadge priority={priorityOf(task)} />
         {scheduleBadge(task)}
+        {assigneeOf(task) !== "either" && assigneeBadge(task)}
         {streak >= 2 && (
           <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400">
             🔥 {streak}-day streak
@@ -556,9 +620,22 @@ function TodayRepeatingCard({
         id={id}
         text={task.text}
         meta={meta}
-        done={todayCompletion !== null}
-        note={todayCompletion?.note ?? null}
+        done={myTick !== null}
+        note={myTick?.note ?? null}
       />
+      {partner && (
+        <p className="mt-2 ml-8 text-xs">
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${
+              partner.done
+                ? "bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400"
+                : "bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
+            }`}
+          >
+            {partner.name}: {partner.done ? "✓ done" : "not yet"}
+          </span>
+        </p>
+      )}
       <PlaceEditor taskId={id} place={task.place ?? null} />
     </Card>
   );
@@ -569,37 +646,65 @@ function rateText(t: { done: number; due: number }) {
   return p === null ? "—" : `${p}%`;
 }
 
-/** Summary tiles at the top of the Repeating section. */
-function RepeatingOverview({ stats, today }: { stats: RepeatStats[]; today: string }) {
-  const sum = (pick: (s: RepeatStats) => { done: number; due: number }) =>
-    stats.reduce(
-      (t, s) => ({ done: t.done + pick(s).done, due: t.due + pick(s).due }),
-      { done: 0, due: 0 },
-    );
+function sumOf(entries: StatsEntry[], pick: (s: RepeatStats) => { done: number; due: number }) {
+  return entries.reduce(
+    (t, e) => ({ done: t.done + pick(e.stats).done, due: t.due + pick(e.stats).due }),
+    { done: 0, due: 0 },
+  );
+}
 
-  const todayCells = stats.map((s) => s.strip[s.strip.length - 1]).filter((d) => d.date === today);
-  const todayTotal = todayCells.filter((d) => d.state !== "off").length;
-  const todayDone = todayCells.filter((d) => d.state === "done").length;
-  const week = sum((s) => s.week);
-  const month = sum((s) => s.window);
+/** Summary tiles at the top of the Repeating section. */
+function RepeatingOverview({
+  entries,
+  todayDone,
+  todayTotal,
+}: {
+  entries: StatsEntry[]; // every record across all repeating tasks
+  todayDone: number; // your ticks today
+  todayTotal: number; // your repeating tasks today
+}) {
+  const week = sumOf(entries, (s) => s.week);
+  const month = sumOf(entries, (s) => s.window);
 
   const tiles = [
-    { label: "Today", value: `${todayDone}/${todayTotal}`, sub: "done so far" },
+    { label: "Your today", value: `${todayDone}/${todayTotal}`, sub: "done so far" },
     { label: "Last 7 days", value: rateText(week), sub: `${week.done} of ${week.due} done` },
     { label: `Last ${WINDOW} days`, value: rateText(month), sub: `${month.done} of ${month.due} done` },
   ];
 
+  // Per person, over personal and "each of us" tasks.
+  const people = (["ish", "ishah"] as User[])
+    .map((who) => ({ who, total: sumOf(entries.filter((e) => e.who === who), (s) => s.window) }))
+    .filter((p) => p.total.due > 0);
+
   return (
-    <div className="mt-3 grid grid-cols-3 gap-2">
-      {tiles.map((t) => (
-        <div key={t.label} className="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800/60">
-          <p className="text-[11px] font-medium text-zinc-500">{t.label}</p>
-          <p className="mt-0.5 text-xl font-semibold text-zinc-900 tabular-nums dark:text-zinc-100">
-            {t.value}
-          </p>
-          <p className="text-[11px] text-zinc-400">{t.sub}</p>
+    <div className="mt-3">
+      <div className="grid grid-cols-3 gap-2">
+        {tiles.map((t) => (
+          <div key={t.label} className="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800/60">
+            <p className="text-[11px] font-medium text-zinc-500">{t.label}</p>
+            <p className="mt-0.5 text-xl font-semibold text-zinc-900 tabular-nums dark:text-zinc-100">
+              {t.value}
+            </p>
+            <p className="text-[11px] text-zinc-400">{t.sub}</p>
+          </div>
+        ))}
+      </div>
+      {people.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {people.map((p) => (
+            <span
+              key={p.who}
+              className="rounded-full bg-zinc-50 px-3 py-1 text-xs text-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300"
+            >
+              {name(p.who)}: <b className="font-semibold tabular-nums">{rateText(p.total)}</b>{" "}
+              <span className="text-zinc-400">
+                ({p.total.done}/{p.total.due}, last {WINDOW} days)
+              </span>
+            </span>
+          ))}
         </div>
-      ))}
+      )}
     </div>
   );
 }
@@ -617,46 +722,17 @@ const CELL_LABEL: Record<DayState, string> = {
   off: "not scheduled",
 };
 
-/** In the Repeating section: the full done/missed record for one task. */
-function RepeatingStatsCard({
-  task,
-  today,
-  stats,
-  log,
-}: {
-  task: Task;
-  today: string;
-  stats: RepeatStats;
-  log: Completion[]; // newest first, within the window
-}) {
-  const id = task._id.toString();
+/** Numbers + 30-day strip for one record. */
+function StatsBlock({ entry, heading }: { entry: StatsEntry; heading: string | null }) {
+  const { stats } = entry;
   const missed = stats.window.due - stats.window.done;
 
   return (
-    <Card className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-      <div className="mb-2 flex flex-wrap items-center gap-1.5">
-        <PriorityBadge priority={priorityOf(task)} />
-        {scheduleBadge(task)}
-      </div>
-
-      <div className="flex items-start gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="font-semibold text-zinc-900 dark:text-zinc-100">{task.text}</p>
-          <p className="mt-0.5 text-xs text-zinc-400">
-            Since {formatDay(dateOf(task.createdAt))} · added by {name(task.createdBy)}
-            {stats.lastDone && ` · last done ${stats.lastDone === today ? "today" : formatDay(stats.lastDone)}`}
-          </p>
-          <PlaceEditor taskId={id} place={task.place ?? null} indent={false} />
-        </div>
-        <DeleteButton
-          action={deleteRepeating.bind(null, id)}
-          label={`Delete "${task.text}"`}
-          message={`Delete the repeating task "${task.text}" and all its history? This can't be undone.`}
-        />
-      </div>
-
-      {/* Numbers */}
-      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-4">
+    <div className="mt-4">
+      {heading && (
+        <p className="mb-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300">{heading}</p>
+      )}
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-4">
         <div>
           <dt className="text-[11px] text-zinc-500">Last {WINDOW} days</dt>
           <dd className="font-semibold text-zinc-900 tabular-nums dark:text-zinc-100">
@@ -693,36 +769,105 @@ function RepeatingStatsCard({
       </dl>
 
       {/* Last 30 days, one square per day */}
-      <div className="mt-4">
-        <div
-          className="grid max-w-md gap-[3px]"
-          style={{ gridTemplateColumns: `repeat(${stats.strip.length}, minmax(0, 1fr))` }}
-          role="img"
-          aria-label={`Last ${WINDOW} days: ${stats.window.done} done, ${missed} missed`}
-        >
-          {stats.strip.map((d) => (
-            <span
-              key={d.date}
-              title={`${formatDay(d.date)}: ${CELL_LABEL[d.state]}${d.by ? ` by ${name(d.by)}` : ""}`}
-              className={`aspect-square rounded-[3px] ${CELL_STYLES[d.state]}`}
-            />
-          ))}
+      <div
+        className="mt-3 grid max-w-md gap-[3px]"
+        style={{ gridTemplateColumns: `repeat(${stats.strip.length}, minmax(0, 1fr))` }}
+        role="img"
+        aria-label={`${heading ? `${heading}: ` : ""}last ${WINDOW} days, ${stats.window.done} done, ${missed} missed`}
+      >
+        {stats.strip.map((d) => (
+          <span
+            key={d.date}
+            title={`${formatDay(d.date)}: ${CELL_LABEL[d.state]}${d.by ? ` by ${name(d.by)}` : ""}`}
+            className={`aspect-square rounded-[3px] ${CELL_STYLES[d.state]}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** In the Repeating section: the full done/missed record for one task. */
+function RepeatingStatsCard({
+  task,
+  today,
+  me,
+  entries,
+  log,
+}: {
+  task: Task;
+  today: string;
+  me: User;
+  entries: StatsEntry[];
+  log: Completion[]; // newest first, within the window
+}) {
+  const id = task._id.toString();
+  const assignee = assigneeOf(task);
+  const lastDone = entries.reduce<string | null>(
+    (latest, e) =>
+      e.stats.lastDone && (latest === null || e.stats.lastDone > latest) ? e.stats.lastDone : latest,
+    null,
+  );
+  const shared = entries.length === 1 && entries[0].who === null;
+  // Show your own record first.
+  const ordered = [...entries].sort((a, b) => (a.who === me ? -1 : b.who === me ? 1 : 0));
+  const firstStrip = entries[0]?.stats.strip;
+
+  return (
+    <Card className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+      <div className="mb-2 flex flex-wrap items-center gap-1.5">
+        <PriorityBadge priority={priorityOf(task)} />
+        {scheduleBadge(task)}
+        <AssigneeSwitcher taskId={id} assignee={assignee} />
+      </div>
+
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-zinc-900 dark:text-zinc-100">{task.text}</p>
+          <p className="mt-0.5 text-xs text-zinc-400">
+            Since {formatDay(dateOf(task.createdAt))} · added by {name(task.createdBy)}
+            {lastDone && ` · last done ${lastDone === today ? "today" : formatDay(lastDone)}`}
+          </p>
+          <PlaceEditor taskId={id} place={task.place ?? null} indent={false} />
         </div>
+        <DeleteButton
+          action={deleteRepeating.bind(null, id)}
+          label={`Delete "${task.text}"`}
+          message={`Delete the repeating task "${task.text}" and all its history? This can't be undone.`}
+        />
+      </div>
+
+      {ordered.map((entry) => (
+        <StatsBlock
+          key={entry.who ?? "shared"}
+          entry={entry}
+          heading={
+            shared || entries.length === 1
+              ? null
+              : entry.who === me
+                ? `You (${name(entry.who)})`
+                : name(entry.who)
+          }
+        />
+      ))}
+
+      {firstStrip && (
         <div className="mt-1.5 flex max-w-md items-center justify-between text-[10px] text-zinc-400">
-          <span>{formatDay(stats.strip[0].date)}</span>
+          <span>{formatDay(firstStrip[0].date)}</span>
           <span className="flex items-center gap-2">
             <Legend state="done" /> <Legend state="missed" /> <Legend state="off" />
           </span>
           <span>Today</span>
         </div>
-      </div>
+      )}
 
-      {/* Who did it */}
-      {Object.keys(stats.byUser).length > 0 && (
+      {/* Who ticked a shared task */}
+      {shared && Object.keys(entries[0].stats.byUser).length > 0 && (
         <p className="mt-3 text-xs text-zinc-500">
           Done by:{" "}
-          {PEOPLE.filter((p) => stats.byUser[p])
-            .map((p) => `${name(p)} ${stats.byUser[p]}×`)
+          {(["ish", "ishah"] as User[])
+            .filter((p) => entries[0].stats.byUser[p])
+            .map((p) => `${name(p)} ${entries[0].stats.byUser[p]}×`)
             .join(" · ")}
         </p>
       )}
