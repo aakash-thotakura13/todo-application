@@ -1,23 +1,30 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { ExpenseCard, SummaryTiles } from "@/app/expenses/expense-view";
-import { formatDay, todayIST } from "@/lib/dates";
+import { SimpleEntry, SimpleSummary } from "./simple-view";
+import { TextSizeControl } from "./text-size";
+import { formatLongDay, todayIST } from "@/lib/dates";
 import { sortExpenses } from "@/lib/expenses";
 import { loadExpenses, ownerForToken } from "@/lib/expenses-server";
 import { DISPLAY_NAMES } from "@/lib/users";
 
 // Public, read-only. No login needed; the link itself is the key.
 export const metadata: Metadata = {
-  title: "Shared expenses",
+  title: "Expenses",
   robots: { index: false, follow: false },
 };
 
+// Always light and high-contrast, whatever the phone's dark-mode setting;
+// pinch-zoom stays allowed.
+export const viewport: Viewport = { colorScheme: "light", themeColor: "#ffffff" };
+
 export default function SharedExpensesPage({ params }: { params: Promise<{ token: string }> }) {
   return (
-    <main className="min-h-dvh bg-zinc-100 px-4 pt-6 pb-16 dark:bg-zinc-950">
-      <div className="mx-auto max-w-3xl">
-        <Suspense fallback={<p className="py-20 text-center text-sm text-zinc-400">Loading…</p>}>
+    <main className="min-h-dvh bg-zinc-100 px-4 pt-5 pb-20 text-zinc-900" style={{ colorScheme: "light" }}>
+      {/* Larger base text for this page (everything is sized from it). */}
+      <style>{"html{font-size:18px}"}</style>
+      <div className="mx-auto max-w-2xl">
+        <Suspense fallback={<p className="py-24 text-center text-xl text-zinc-600">Loading…</p>}>
           <Shared params={params} />
         </Suspense>
       </div>
@@ -33,11 +40,13 @@ async function Shared({ params }: { params: Promise<{ token: string }> }) {
   if (!owner) {
     return (
       <div className="py-24 text-center">
-        <p className="text-4xl">🔒</p>
-        <h1 className="mt-3 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-          This link isn&apos;t valid
-        </h1>
-        <p className="mt-1 text-sm text-zinc-500">It may have been reset. Ask for a new link.</p>
+        <p className="text-5xl" aria-hidden>
+          🔒
+        </p>
+        <h1 className="mt-4 text-2xl font-bold">This link is not working</h1>
+        <p className="mt-2 text-lg text-zinc-700">
+          It may have been changed. Please ask for a new link.
+        </p>
       </div>
     );
   }
@@ -48,27 +57,35 @@ async function Shared({ params }: { params: Promise<{ token: string }> }) {
   return (
     <>
       <header className="mb-5">
-        <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
-          Shared · view only
-        </p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+        <div className="mb-4 flex justify-end">
+          <TextSizeControl />
+        </div>
+        <h1 className="text-3xl leading-tight font-extrabold">
           {DISPLAY_NAMES[owner]}&apos;s expenses
         </h1>
-        <p className="text-sm text-zinc-500">As of {formatDay(today)}</p>
+        <p className="mt-1 text-lg text-zinc-700">Updated: {formatLongDay(today)}</p>
+        <p className="mt-1 text-base text-zinc-600">This page is for viewing only.</p>
       </header>
 
-      <SummaryTiles rows={rows} today={today} />
-
       {rows.length === 0 ? (
-        <p className="py-12 text-center text-sm text-zinc-400">No entries yet.</p>
+        <p className="rounded-3xl bg-white py-16 text-center text-xl text-zinc-700">
+          Nothing has been added yet.
+        </p>
       ) : (
-        <ul className="mt-4 grid gap-3 md:grid-cols-2">
-          {rows.map((row, i) => (
-            <li key={row.id}>
-              <ExpenseCard row={row} sno={i + 1} today={today} showOwner={false} />
-            </li>
-          ))}
-        </ul>
+        <>
+          <SimpleSummary rows={rows} today={today} />
+
+          <h2 className="mt-8 mb-3 text-2xl font-bold">All payments ({rows.length})</h2>
+          <ol className="space-y-4">
+            {rows.map((row, i) => (
+              <li key={row.id}>
+                <SimpleEntry row={row} sno={i + 1} today={today} />
+              </li>
+            ))}
+          </ol>
+
+          <p className="mt-8 text-center text-base text-zinc-600">— End of list —</p>
+        </>
       )}
     </>
   );

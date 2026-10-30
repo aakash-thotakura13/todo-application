@@ -78,3 +78,11 @@ export function parseAmount(value: unknown): number | null {
   const n = Number(cleaned);
   return Number.isFinite(n) && n <= MAX_AMOUNT ? n : null;
 }
+
+/** "1.5 lakh", "2 crore" — the way amounts are said aloud. Null below ₹1 lakh. */
+export function inLakhs(amount: number): string | null {
+  const trim = (n: number) => String(Number(n.toFixed(2)));
+  if (amount >= 1_00_00_000) return `${trim(amount / 1_00_00_000)} crore`;
+  if (amount >= 1_00_000) return `${trim(amount / 1_00_000)} lakh`;
+  return null;
+}

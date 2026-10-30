@@ -71,3 +71,16 @@ export function scheduleLabel(days: number[] | undefined) {
   if (d.join() === "0,6") return "Weekends";
   return d.map((i) => DAY_SHORT[i]).join(", ");
 }
+
+const longFormat = new Intl.DateTimeFormat("en-IN", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+/** "Thursday, 5 November 2026" — easiest to read, nothing abbreviated. */
+export function formatLongDay(date: string) {
+  return longFormat.format(parse(date));
+}
