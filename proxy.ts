@@ -10,5 +10,6 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!login|_next/static|_next/image|favicon.ico).*)"],
+  // Everything needs a login except the login page, read-only share links and static files.
+  matcher: ["/((?!login|share/|_next/static|_next/image|favicon.ico).*)"],
 };

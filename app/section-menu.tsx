@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useBoard, type SectionId } from "./board-shell";
 
@@ -11,6 +12,7 @@ export type MenuItem = { id: SectionId; label: string; icon: string; count: numb
  */
 export function SectionMenu({ items }: { items: MenuItem[] }) {
   const { active, show, setComposing } = useBoard();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
@@ -34,6 +36,7 @@ export function SectionMenu({ items }: { items: MenuItem[] }) {
   const current = items.find((i) => i.id === active);
   const entries = [
     ...items.map((item) => ({ ...item, onPick: () => show(item.id) })),
+    { id: "expenses", label: "Expenses", icon: "₹", count: null, onPick: () => router.push("/expenses") },
     { id: "new", label: "New task", icon: "＋", count: null, onPick: () => setComposing(true) },
   ];
 

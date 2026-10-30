@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
 import { deleteChain, deleteRepeating, logout } from "./actions";
 import { Card } from "./instant";
@@ -251,6 +252,10 @@ async function Board() {
             <span>{formatDay(today)}</span>
             <span aria-hidden>·</span>
             <span>{DISPLAY_NAMES[user]}</span>
+            <span aria-hidden>·</span>
+            <Link href="/expenses" className="text-zinc-500 hover:text-blue-600 hover:underline">
+              Expenses
+            </Link>
             <span aria-hidden>·</span>
             <form action={logout}>
               <button type="submit" className="text-zinc-500 hover:text-blue-600 hover:underline">

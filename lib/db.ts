@@ -52,6 +52,31 @@ export type Completion = {
   note?: string | null;
 };
 
+/** One row of the expenses page. */
+export type Expense = {
+  _id: ObjectId;
+  owner: User; // whose entry it is (sharing is per owner)
+  date: string; // "YYYY-MM-DD"
+  category: string;
+  vendor: string;
+  budget: number;
+  advance: number;
+  dueDate: string | null;
+  paid: boolean;
+  remarks: string;
+  createdBy: User;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+/** A read-only link to one person's expenses. Resetting replaces the token. */
+export type ShareLink = {
+  _id: ObjectId;
+  owner: User;
+  token: string;
+  createdAt: Date;
+};
+
 // Reuse one client across hot reloads in dev and across requests in prod.
 declare global {
   var _mongoClient: MongoClient | undefined;
@@ -76,4 +101,12 @@ export function tasksCollection() {
 
 export function completionsCollection() {
   return db().collection<Completion>("completions");
+}
+
+export function expensesCollection() {
+  return db().collection<Expense>("expenses");
+}
+
+export function sharesCollection() {
+  return db().collection<ShareLink>("shares");
 }
